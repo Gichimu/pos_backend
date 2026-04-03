@@ -1,0 +1,31 @@
+import express from "express";
+const router = express.Router();
+
+import { getUsers, createUser } from "../controllers/user.js";
+import { error } from "node:console";
+
+router.get("/", (req: Request, res: any) => {
+  res.json({ message: "Welcome to the POS API" });
+});
+
+router.get("/users", async (req: any, res: any) => {
+  let results: any = await getUsers();
+  if (results.error) {
+    res.status(500).json({ error: "Failed to fetch users" });
+  } else {
+    res.json({ results: results });
+  }
+});
+
+router.post("/users", async (req: any, res: any) => {
+  let results: any = await createUser(req);
+  if (results.error) {
+    res
+      .status(400)
+      .json({ message: "Failed to create user", error: results.error });
+  } else {
+    res.status(201).json({ results: results });
+  }
+});
+
+export default router;
