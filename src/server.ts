@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 
 import routes from "./routes/routes.js";
 import connectDB from "./utils/db.js";
+import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 const port = process.env.PORT || 3000;
@@ -12,6 +13,7 @@ app.use(cors());
 
 app.use(express.json());
 app.use("/api", routes);
+app.use("/api/auth", authRoutes);
 
 // todo: add error handling middleware
 // todo: add database connection

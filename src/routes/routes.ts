@@ -1,7 +1,12 @@
 import express from "express";
 const router = express.Router();
 
-import { getUsers, createUser } from "../controllers/user.js";
+import {
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+} from "../controllers/user.js";
 import { error } from "node:console";
 
 router.get("/", (req: Request, res: any) => {
@@ -13,7 +18,7 @@ router.get("/users", async (req: any, res: any) => {
   if (results.error) {
     res.status(500).json({ error: "Failed to fetch users" });
   } else {
-    res.json({ results: results });
+    res.json(results);
   }
 });
 
@@ -24,7 +29,29 @@ router.post("/users", async (req: any, res: any) => {
       .status(400)
       .json({ message: "Failed to create user", error: results.error });
   } else {
-    res.status(201).json({ results: results });
+    res.status(201).json(results);
+  }
+});
+
+router.put("/users/:id", async (req: any, res: any) => {
+  let results: any = await updateUser(req);
+  if (results.error) {
+    res
+      .status(400)
+      .json({ message: "Failed to update user", error: results.error });
+  } else {
+    res.json(results);
+  }
+});
+
+router.delete("/users/:id", async (req: any, res: any) => {
+  let results: any = await deleteUser(req);
+  if (results.error) {
+    res
+      .status(400)
+      .json({ message: "Failed to delete user", error: results.error });
+  } else {
+    res.json(results);
   }
 });
 
