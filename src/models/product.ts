@@ -10,6 +10,11 @@ const productSchema = new mongoose.Schema(
     sellingPrice: { type: Number, required: true },
     currentStock: { type: Number, default: 0 },
     minStockLevel: { type: Number, default: 10 },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true },
 );

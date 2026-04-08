@@ -8,12 +8,13 @@ import {
   deleteUser,
 } from "../controllers/user.js";
 import { error } from "node:console";
+import { verify } from "../controllers/auth.js";
 
-router.get("/", (req: Request, res: any) => {
-  res.json({ message: "Welcome to the POS API" });
-});
+// router.get("/", (req: Request, res: any) => {
+//   res.json({ message: "Welcome to the POS API" });
+// });
 
-router.get("/users", async (req: any, res: any) => {
+router.get("/", async (req: any, res: any) => {
   let results: any = await getUsers();
   if (results.error) {
     res.status(500).json({ error: "Failed to fetch users" });
@@ -22,7 +23,7 @@ router.get("/users", async (req: any, res: any) => {
   }
 });
 
-router.post("/users", async (req: any, res: any) => {
+router.post("/", verify, async (req: any, res: any) => {
   let results: any = await createUser(req);
   if (results.error) {
     res
@@ -33,7 +34,7 @@ router.post("/users", async (req: any, res: any) => {
   }
 });
 
-router.put("/users/:id", async (req: any, res: any) => {
+router.put("/:id", verify, async (req: any, res: any) => {
   let results: any = await updateUser(req);
   if (results.error) {
     res
@@ -44,7 +45,7 @@ router.put("/users/:id", async (req: any, res: any) => {
   }
 });
 
-router.delete("/users/:id", async (req: any, res: any) => {
+router.delete("/:id", verify, async (req: any, res: any) => {
   let results: any = await deleteUser(req);
   if (results.error) {
     res

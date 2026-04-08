@@ -23,11 +23,24 @@ const login = async (req: any) => {
   if (!isMatch) {
     return { error: "Invalid credentials" };
   } else {
-    //todo: generate and return JWT token for authenticated sessions
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
       expiresIn: "1h",
     });
     return { message: "Login successful", user: user, token: token };
+  }
+};
+
+const verify = (req: any, res: any, next: any) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ error: "Token not provided" });
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    req.user = decoded; // Attach decoded user info to request object
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid token" });
   }
 };
 
@@ -36,4 +49,4 @@ const logout = async (req: any) => {
   // Since JWT is stateless, we can't really "logout" on the server side without implementing token blacklisting.
 };
 
-export { login, logout };
+export { login, logout, verify };
