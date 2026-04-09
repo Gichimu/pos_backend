@@ -47,6 +47,7 @@ const verify = (req: any, res: any, next: any) => {
 const logout = async (req: any) => {
   // Implementation for logout functionality
   // Since JWT is stateless, we can't really "logout" on the server side without implementing token blacklisting.
+  return { message: "Logout successful" };
 };
 
 export { login, logout, verify };
