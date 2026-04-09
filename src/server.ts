@@ -2,13 +2,14 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
-// import routes from "./routes/routes.js";
 import userRoutes from "./routes/userRoutes.js";
 import connectDB from "./utils/db.js";
 import authRoutes from "./routes/authRoutes.js";
-import product from "./models/product.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
+import salesRoutes from "./routes/salesRoutes.js";
+import notFound from "./middlewares/notFound.js";
+import errorHandler from "./middlewares/errorHandler.js";
 
 dotenv.config();
 const port = process.env.PORT || 3000;
@@ -20,9 +21,10 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/sales", salesRoutes);
 
-// todo: add error handling middleware
-// todo: add database connection
+app.use(notFound);
+app.use(errorHandler);
 
 // Start the server
 app.listen(port, async () => {
