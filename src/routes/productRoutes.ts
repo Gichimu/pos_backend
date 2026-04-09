@@ -8,9 +8,10 @@ import {
   getAllProducts,
   updateProduct,
 } from "../controllers/product.js";
+import { verify } from "../controllers/auth.js";
 
 // get all products
-router.get("/", async (req: any, res: any) => {
+router.get("/", verify, async (req: any, res: any) => {
   try {
     let products = await getAllProducts(req, res);
     res.json(products);
@@ -20,7 +21,7 @@ router.get("/", async (req: any, res: any) => {
   }
 });
 
-router.post("/", async (req: any, res: any) => {
+router.post("/", verify, async (req: any, res: any) => {
   try {
     let addedProduct = await addProduct(req, res);
     res.status(201).json(addedProduct);
@@ -30,7 +31,7 @@ router.post("/", async (req: any, res: any) => {
   }
 });
 
-router.put("/:id", async (req: any, res: any) => {
+router.put("/:id", verify, async (req: any, res: any) => {
   try {
     let updatedProduct = await updateProduct(req, res);
     res.json(updatedProduct);
@@ -40,7 +41,7 @@ router.put("/:id", async (req: any, res: any) => {
   }
 });
 
-router.delete("/:id", async (req: any, res: any) => {
+router.delete("/:id", verify, async (req: any, res: any) => {
   try {
     await deleteProduct(req, res);
     res.json({ message: "Product deleted successfully" });

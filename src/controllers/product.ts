@@ -12,8 +12,9 @@ const getAllProducts = async (req: any, res: any) => {
 
 const addProduct = async (req: any, res: any) => {
   try {
-    const { name, price, description } = req.body;
-    const newProduct = new Product({ name, price, description });
+    const product = req.body;
+    const newProduct = new Product(product);
+    newProduct.createdBy = req.user.id;
     await newProduct.save();
     res.status(201).json(newProduct);
   } catch (error) {
@@ -25,12 +26,10 @@ const addProduct = async (req: any, res: any) => {
 const updateProduct = async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const { name, price, description } = req.body;
-    const updatedProduct = await Product.findByIdAndUpdate(
-      id,
-      { name, price, description },
-      { new: true },
-    );
+    const product = req.body;
+    const updatedProduct = await Product.findByIdAndUpdate(id, product, {
+      new: true,
+    });
     res.json(updatedProduct);
   } catch (error) {
     console.error("Error updating product:", error);
