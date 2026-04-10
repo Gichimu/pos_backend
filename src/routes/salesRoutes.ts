@@ -1,10 +1,10 @@
 import express from "express";
-import { createSale, getAllSales } from "../controllers/sales.js";
+import { createSale, getAllSales, confirmSale } from "../controllers/sales.js";
 import { verify } from "../controllers/auth.js";
 const router = express.Router();
 
 router.get("/", verify, async (req: any, res: any) => {
-  let results: any = await getAllSales();
+  let results: any = await getAllSales(req);
   if (results.error) {
     res.status(500).json({ error: "Failed to fetch sales" });
   } else {
@@ -22,5 +22,22 @@ router.post("/", verify, async (req: any, res: any) => {
     res.status(201).json(results);
   }
 });
+
+router.patch(
+  "/:saleId/items/:itemId/confirm",
+  verify,
+  async (req: any, res: any) => {
+    let results: any = await confirmSale(req);
+    if (results.error) {
+      res
+        .status(400)
+        .json({ message: "Failed to confirm sale", error: results.error });
+    } else if (results.message) {
+      res.status(404).json({ message: results.message });
+    } else {
+      res.json(results);
+    }
+  },
+);
 
 export default router;

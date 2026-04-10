@@ -9,14 +9,13 @@ const saleSchema = new mongoose.Schema(
         unitPrice: { type: Number, required: true }, // Snapshot of price at time of sale
         subTotal: { type: Number, required: true },
         confirmed: { type: Boolean, default: false }, // For pending sales that need confirmation
+        paymentMethod: {
+          type: String,
+          enum: ["Cash", "M-Pesa", "PDQ"],
+        },
       },
     ],
     totalAmount: { type: Number, required: true },
-    // paymentMethod: {
-    //   type: String,
-    //   enum: ["Cash", "M-Pesa", "Card"],
-    //   required: true,
-    // },
     cashierId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true },
