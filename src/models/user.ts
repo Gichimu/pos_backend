@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const roles = ["cashier", "manager", "superAdmin"];
+const rolesEnum = ["cashier", "manager", "superAdmin"];
 
 const userSchema = new mongoose.Schema(
   {
@@ -8,10 +8,11 @@ const userSchema = new mongoose.Schema(
     lastName: { type: String, required: true },
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
-    role: {
-      type: String,
-      enum: roles,
-      default: "cashier",
+    pin: { type: String }, // Optional field for cashier PIN
+    roles: {
+      type: mongoose.Schema.Types.Mixed,
+      enum: rolesEnum,
+      required: true,
     },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
   },

@@ -1,5 +1,7 @@
 import User from "../models/user.js";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import { sendWelcomeEmail } from "../utils/mail.js";
 
 async function getUsers() {
   try {
@@ -25,7 +27,19 @@ const createUser = async (req: any) => {
   try {
     req.body.password = await bcrypt.hash(req.body.password, 10); // Hash the password before saving
     let user = new User(req.body);
+
+    // create a random 5-digit PIN for cashiers if role includes 'cashier'
+    if (user.roles.includes("cashier")) {
+      user.pin = crypto.randomInt(10000, 99999).toString();
+    }
+
     await user.save();
+
+    // email the PIN to the cashier if they have a PIN (i.e., if they are a cashier)
+    // if (user.pin) {
+    //   await sendWelcomeEmail(user.email, user.firstName, user.pin);
+    // }
+
     console.log("User created successfully:", user);
     return user;
   } catch (error) {
@@ -42,6 +56,13 @@ const updateUser = async (req: any) => {
     }
     if (req.body.password) {
       req.body.password = await bcrypt.hash(req.body.password, 10);
+    } else {
+      const userById = await User.findById(req.params.id);
+      if (!userById) {
+        return { error: "User not found" };
+      } else {
+        req.body.password = userById.password; // Keep existing password if not provided
+      }
     }
     let user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
