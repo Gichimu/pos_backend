@@ -1,7 +1,6 @@
 import User from "../models/user.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { sendWelcomeEmail } from "../utils/mail.js";
 
 async function getUsers() {
   try {

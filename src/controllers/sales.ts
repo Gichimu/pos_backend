@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Sales from "../models/sales.js";
+import Product from "../models/product.js";
 
 const getAllSales = async (req: any) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -40,14 +41,86 @@ const getAllSales = async (req: any) => {
 };
 
 const createSale = async (req: any) => {
-  if (!req.body) {
+  if (
+    !req.body ||
+    !Array.isArray(req.body.items) ||
+    req.body.items.length === 0
+  ) {
     return { message: "Required parameters are missing" };
   }
+
+  const quantityByProduct = new Map<string, number>();
+  for (const item of req.body.items) {
+    if (!item.productId || !item.quantity || item.quantity <= 0) {
+      return {
+        message: "Each sale item must include valid productId and quantity",
+      };
+    }
+
+    const productId = item.productId.toString();
+    const currentQuantity = quantityByProduct.get(productId) || 0;
+    quantityByProduct.set(productId, currentQuantity + item.quantity);
+  }
+
+  const productIds = [...quantityByProduct.keys()].map(
+    (id) => new mongoose.Types.ObjectId(id),
+  );
+
   try {
+    const products = await Product.find({ _id: { $in: productIds } }).select(
+      "_id currentStock",
+    );
+    const productStockMap = new Map(
+      products.map((product: any) => [
+        product._id.toString(),
+        product.currentStock,
+      ]),
+    );
+
+    for (const [productId, quantity] of quantityByProduct.entries()) {
+      const currentStock = productStockMap.get(productId);
+
+      if (currentStock === undefined) {
+        return { message: `Product not found: ${productId}` };
+      }
+
+      if (currentStock < quantity) {
+        return {
+          message: `Insufficient stock for product ${productId}. Available: ${currentStock}, requested: ${quantity}`,
+        };
+      }
+    }
+
+    const stockDeductionOps = [...quantityByProduct.entries()].map(
+      ([productId, quantity]) => ({
+        updateOne: {
+          filter: { _id: new mongoose.Types.ObjectId(productId) },
+          update: { $inc: { currentStock: -quantity } },
+        },
+      }),
+    );
+
+    await Product.bulkWrite(stockDeductionOps);
+
     const sale = req.body;
     const newSale = new Sales(sale);
     newSale.cashierId = req.user.id; // Assuming req.user is set by auth middleware
-    await newSale.save();
+    try {
+      await newSale.save();
+    } catch (saveError) {
+      const rollbackOps = [...quantityByProduct.entries()].map(
+        ([productId, quantity]) => ({
+          updateOne: {
+            filter: { _id: new mongoose.Types.ObjectId(productId) },
+            update: { $inc: { currentStock: quantity } },
+          },
+        }),
+      );
+
+      await Product.bulkWrite(rollbackOps);
+      throw saveError;
+    }
+
     return newSale;
   } catch (error) {
     console.error("Error creating sale:", error);
@@ -100,4 +173,77 @@ const confirmSale = async (req: any) => {
   }
 };
 
-export { getAllSales, createSale, getSaleById, confirmSale };
+const unconfirmSale = async (req: any) => {
+  const { saleId, itemId } = req.params;
+  try {
+    const sale = await Sales.findOneAndUpdate(
+      { _id: saleId, "items._id": itemId },
+      {
+        $set: {
+          "items.$[elem].confirmed": false,
+          "items.$[elem].paymentMethod": null,
+        },
+      },
+      {
+        arrayFilters: [{ "elem._id": itemId }],
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    if (!sale) {
+      return { message: "Sale not found" };
+    }
+
+    return sale;
+  } catch (error) {
+    console.error("Error unconfirming sale:", error);
+    return { message: "Failed to unconfirm sale", error: error };
+  }
+};
+
+const deleteSale = async (req: any) => {
+  const { saleId, itemId } = req.params;
+
+  try {
+    const sale = await Sales.findOne({ _id: saleId, "items._id": itemId });
+    if (!sale) {
+      return { message: "Sale or sale item not found" };
+    }
+
+    const item: any = sale.items.id(itemId);
+
+    if (!item) {
+      return { message: "Sale item not found" };
+    }
+
+    await Product.updateOne(
+      { _id: item.productId },
+      { $inc: { currentStock: item.quantity } },
+    );
+
+    if (sale.items.length === 1) {
+      await Sales.findByIdAndDelete(sale._id);
+      return { deletedSale: true, saleId: sale._id };
+    }
+
+    await item.deleteOne();
+    sale.totalAmount = Math.max(0, sale.totalAmount - item.subTotal);
+
+    await sale.save();
+
+    return sale;
+  } catch (error) {
+    console.error("Error deleting sale:", error);
+    return { message: "Failed to delete sale", error: error };
+  }
+};
+
+export {
+  getAllSales,
+  createSale,
+  getSaleById,
+  confirmSale,
+  unconfirmSale,
+  deleteSale,
+};

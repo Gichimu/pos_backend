@@ -1,5 +1,11 @@
 import express from "express";
-import { createSale, getAllSales, confirmSale } from "../controllers/sales.js";
+import {
+  createSale,
+  getAllSales,
+  confirmSale,
+  unconfirmSale,
+  deleteSale,
+} from "../controllers/sales.js";
 import { verify } from "../controllers/auth.js";
 const router = express.Router();
 
@@ -39,5 +45,35 @@ router.patch(
     }
   },
 );
+
+router.patch(
+  "/:saleId/items/:itemId/unconfirm",
+  verify,
+  async (req: any, res: any) => {
+    let results: any = await unconfirmSale(req);
+    if (results.error) {
+      res
+        .status(400)
+        .json({ message: "Failed to unconfirm sale", error: results.error });
+    } else if (results.message) {
+      res.status(404).json({ message: results.message });
+    } else {
+      res.json(results);
+    }
+  },
+);
+
+router.delete("/:saleId/items/:itemId", verify, async (req: any, res: any) => {
+  let results: any = await deleteSale(req);
+  if (results.error) {
+    res
+      .status(400)
+      .json({ message: "Failed to delete sale", error: results.error });
+  } else if (results.message) {
+    res.status(404).json({ message: results.message });
+  } else {
+    res.json(results);
+  }
+});
 
 export default router;

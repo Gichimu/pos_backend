@@ -1,7 +1,14 @@
 import mongoose from "mongoose";
+import Counter from "./counter.js";
 
 const saleSchema = new mongoose.Schema(
   {
+    saleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      match: /^\d{8}$/,
+    },
     items: [
       {
         productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
@@ -16,9 +23,35 @@ const saleSchema = new mongoose.Schema(
       },
     ],
     totalAmount: { type: Number, required: true },
-    cashierId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    cashierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true },
 );
+
+saleSchema.pre("validate", async function () {
+  if (this.saleId) {
+    return;
+  }
+
+  const counter = await Counter.findByIdAndUpdate(
+    "saleId",
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true, setDefaultsOnInsert: true },
+  );
+
+  if (!counter) {
+    throw new Error("Failed to generate saleId");
+  }
+
+  if (counter.seq > 99999999) {
+    throw new Error("saleId sequence exceeded 8-digit limit");
+  }
+
+  this.saleId = counter.seq.toString().padStart(8, "0");
+});
 
 export default mongoose.model("Sale", saleSchema);
