@@ -9,6 +9,11 @@ const saleSchema = new mongoose.Schema(
       sparse: true,
       match: /^\d{8}$/,
     },
+    shiftId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shift",
+      required: true,
+    },
     items: [
       {
         productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },

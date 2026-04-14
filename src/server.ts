@@ -10,6 +10,7 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import salesRoutes from "./routes/salesRoutes.js";
 import notFound from "./middlewares/notFound.js";
 import errorHandler from "./middlewares/errorHandler.js";
+import shiftRoutes from "./routes/shiftRoutes.js";
 
 dotenv.config();
 const port = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/sales", salesRoutes);
+app.use("/api/shifts", shiftRoutes); // Add this line to include shift routes
 
 app.use(notFound);
 app.use(errorHandler);
