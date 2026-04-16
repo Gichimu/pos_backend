@@ -24,7 +24,7 @@ const login = async (req: any) => {
     return { error: "Invalid credentials" };
   } else {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
-      expiresIn: "1m",
+      expiresIn: "15m",
     });
     const refreshToken = crypto.randomBytes(40).toString("hex");
     user.refreshToken = refreshToken;

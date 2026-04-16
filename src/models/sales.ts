@@ -25,6 +25,10 @@ const saleSchema = new mongoose.Schema(
           type: String,
           enum: ["Cash", "M-Pesa", "PDQ"],
         },
+        confirmedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
       },
     ],
     totalAmount: { type: Number, required: true },

@@ -169,6 +169,7 @@ const confirmSale = async (req: any) => {
         $set: {
           "items.$[elem].confirmed": true,
           "items.$[elem].paymentMethod": paymentMethod,
+          "items.$[elem].confirmedBy": req.user.id, // Assuming req.user is set by auth middleware
         },
       },
       {
@@ -198,6 +199,7 @@ const unconfirmSale = async (req: any) => {
         $set: {
           "items.$[elem].confirmed": false,
           "items.$[elem].paymentMethod": null,
+          "items.$[elem].confirmedBy": null, // Assuming req.user is set by auth middleware
         },
       },
       {
