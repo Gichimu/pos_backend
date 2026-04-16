@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
     pin: { type: String }, // Optional field for cashier PIN
+    refreshToken: { type: String }, // For JWT refresh tokens
     roles: {
       type: mongoose.Schema.Types.Mixed,
       enum: rolesEnum,

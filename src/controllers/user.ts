@@ -60,6 +60,9 @@ const updateUser = async (req: any) => {
       if (!userById) {
         return { error: "User not found" };
       } else {
+        if (req.body.status === "inactive") {
+          req.body.refreshToken = null; // Invalidate refresh token when user is deactivated
+        }
         req.body.password = userById.password; // Keep existing password if not provided
       }
     }

@@ -24,9 +24,46 @@ const login = async (req: any) => {
     return { error: "Invalid credentials" };
   } else {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
-      expiresIn: "1h",
+      expiresIn: "1m",
     });
-    return { message: "Login successful", user: user, token: token };
+    const refreshToken = crypto.randomBytes(40).toString("hex");
+    user.refreshToken = refreshToken;
+    await user.save();
+    return {
+      message: "Login successful",
+      user: user,
+      token: token,
+      refreshToken: refreshToken,
+    };
+  }
+};
+
+const tokenRefresh = async (refreshToken: string) => {
+  try {
+    if (!refreshToken) {
+      throw new Error("Refresh token is required");
+    }
+    const user = await User.findOne({ refreshToken });
+    if (!user) {
+      throw new Error("Invalid refresh token");
+    }
+
+    // recycle the refresh token by generating a new one and saving it to the user document
+    const newRefreshToken = crypto.randomBytes(40).toString("hex");
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
+      expiresIn: "24h",
+    });
+    return {
+      message: "Token refreshed successfully",
+      token,
+      refreshToken: newRefreshToken,
+    };
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    return { message: "Failed to refresh token", error: error };
   }
 };
 
@@ -45,9 +82,17 @@ const verify = (req: any, res: any, next: any) => {
 };
 
 const logout = async (req: any) => {
-  // Implementation for logout functionality
-  // Since JWT is stateless, we can't really "logout" on the server side without implementing token blacklisting.
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return { error: "Refresh token is required" };
+  }
+  const user = await User.findOne({ refreshToken });
+  if (!user) {
+    return { error: "Invalid refresh token" };
+  }
+  user.refreshToken = null;
+  await user.save();
   return { message: "Logout successful" };
 };
 
-export { login, logout, verify };
+export { login, logout, verify, tokenRefresh };
