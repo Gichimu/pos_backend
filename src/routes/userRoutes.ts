@@ -17,18 +17,18 @@ import { verify } from "../controllers/auth.js";
 router.get("/", async (req: any, res: any) => {
   let results: any = await getUsers();
   if (results.error) {
-    res.status(500).json({ error: "Failed to fetch users" });
+    res
+      .status(400)
+      .json({ message: "Failed to fetch users", error: results.error.message });
   } else {
     res.json(results);
   }
 });
 
 router.post("/", verify, async (req: any, res: any) => {
-  let results: any = await createUser(req);
-  if (results.error) {
-    res
-      .status(400)
-      .json({ message: "Failed to create user", error: results.error });
+  let { results, error }: any = await createUser(req);
+  if (error) {
+    res.status(400).json({ message: "Failed to create user", error: error });
   } else {
     res.status(201).json(results);
   }

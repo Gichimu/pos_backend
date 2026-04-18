@@ -11,13 +11,13 @@ const login = async (req: any) => {
     return { error: "Required parameters missing" };
   }
   const { email, password } = req.body;
-  console.log("Login attempt for email:", email);
+
   // find user by email
   const user = await User.findOne({ email });
   if (!user) {
     return { error: "User not found" };
   }
-  console.log("User found:", user);
+
   // check password
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {

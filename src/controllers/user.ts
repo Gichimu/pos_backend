@@ -24,6 +24,12 @@ const createUser = async (req: any) => {
   }
 
   try {
+    const existingUser = await User.findOne({
+      email: new RegExp(`^${req.body.email}$`, "i"),
+    });
+    if (existingUser) {
+      throw new Error("User with this email already exists");
+    }
     req.body.password = await bcrypt.hash(req.body.password, 10); // Hash the password before saving
     let user = new User(req.body);
 
@@ -39,12 +45,11 @@ const createUser = async (req: any) => {
     //   await sendWelcomeEmail(user.email, user.firstName, user.pin);
     // }
 
-    console.log("User created successfully:", user);
     return user;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating user:", error);
     //todo: handle duplicate email error and other validation errors more gracefully
-    return { error: "Failed to create user" };
+    return { message: "Failed to create user", error: error };
   }
 };
 
