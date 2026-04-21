@@ -20,15 +20,6 @@ const saleSchema = new mongoose.Schema(
         quantity: { type: Number, required: true },
         unitPrice: { type: Number, required: true }, // Snapshot of price at time of sale
         subTotal: { type: Number, required: true },
-        confirmed: { type: Boolean, default: false }, // For pending sales that need confirmation
-        paymentMethod: {
-          type: String,
-          enum: ["Cash", "M-Pesa", "PDQ"],
-        },
-        confirmedBy: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
       },
     ],
     totalAmount: { type: Number, required: true },
@@ -36,6 +27,19 @@ const saleSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    confirmed: { type: Boolean, default: false }, // For pending sales that need confirmation
+    paymentMethod: {
+      type: String,
+      enum: ["Cash", "M-Pesa", "PDQ", "Split"],
+    },
+    splitAmounts: {
+      cashAmount: { type: Number },
+      mpesaAmount: { type: Number },
+    },
+    confirmedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
   },
   { timestamps: true },

@@ -1,7 +1,12 @@
 import express from "express";
 const router = express.Router();
 
-import { login, logout, tokenRefresh } from "../controllers/auth.js";
+import {
+  confimAccount,
+  login,
+  logout,
+  tokenRefresh,
+} from "../controllers/auth.js";
 
 router.post("/login", async (req: any, res: any) => {
   let results: any = await login(req);
@@ -32,6 +37,22 @@ router.post("/refresh-token", async (req: any, res: any) => {
     res
       .status(400)
       .json({ message: "Failed to refresh token", error: results.error });
+  } else {
+    res.json(results);
+  }
+});
+
+router.post("/confirm-account", async (req: any, res: any) => {
+  console.log("Confirm account request body:", req.body); // Debug log
+  const { userId, newPassword } = req.body;
+  if (!userId || !newPassword) {
+    return res.status(400).json({ message: "Required parameters missing!" });
+  }
+  let results = await confimAccount(userId, newPassword);
+  if (results.error) {
+    res
+      .status(400)
+      .json({ message: "Failed to activate account", error: results.error });
   } else {
     res.json(results);
   }

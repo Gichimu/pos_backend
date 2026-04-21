@@ -155,8 +155,8 @@ const getSaleById = async (id: string) => {
 };
 
 const confirmSale = async (req: any) => {
-  const { saleId, itemId } = req.params;
-  const { paymentMethod } = req.body;
+  const { saleId } = req.params;
+  const { paymentMethod, splitAmounts } = req.body;
 
   if (!paymentMethod) {
     return { message: "paymentMethod is required" };
@@ -164,23 +164,23 @@ const confirmSale = async (req: any) => {
 
   try {
     const sale = await Sales.findOneAndUpdate(
-      { _id: saleId, "items._id": itemId },
+      { _id: saleId },
       {
         $set: {
-          "items.$[elem].confirmed": true,
-          "items.$[elem].paymentMethod": paymentMethod,
-          "items.$[elem].confirmedBy": req.user.id, // Assuming req.user is set by auth middleware
+          confirmed: true,
+          paymentMethod,
+          confirmedBy: req.user.id, // Assuming req.user is set by auth middleware
+          splitAmounts,
         },
       },
       {
-        arrayFilters: [{ "elem._id": itemId }],
         new: true,
         runValidators: true,
       },
     );
 
     if (!sale) {
-      return { message: "Sale not found" };
+      throw new Error("Sale not found");
     }
 
     return sale;
@@ -191,26 +191,25 @@ const confirmSale = async (req: any) => {
 };
 
 const unconfirmSale = async (req: any) => {
-  const { saleId, itemId } = req.params;
+  const { saleId } = req.params;
   try {
     const sale = await Sales.findOneAndUpdate(
-      { _id: saleId, "items._id": itemId },
+      { _id: saleId },
       {
         $set: {
-          "items.$[elem].confirmed": false,
-          "items.$[elem].paymentMethod": null,
-          "items.$[elem].confirmedBy": null, // Assuming req.user is set by auth middleware
+          confirmed: false,
+          paymentMethod: null,
+          confirmedBy: null, // Assuming req.user is set by auth middleware
         },
       },
       {
-        arrayFilters: [{ "elem._id": itemId }],
         new: true,
         runValidators: true,
       },
     );
 
     if (!sale) {
-      return { message: "Sale not found" };
+      throw new Error("Sale not found");
     }
 
     return sale;
@@ -221,39 +220,44 @@ const unconfirmSale = async (req: any) => {
 };
 
 const deleteSale = async (req: any) => {
-  const { saleId, itemId } = req.params;
+  const { saleId } = req.params;
 
   try {
-    const sale = await Sales.findOne({ _id: saleId, "items._id": itemId });
+    const sale = await Sales.findOne({ _id: saleId });
     if (!sale) {
-      return { message: "Sale or sale item not found" };
+      throw new Error("Sale or sale item not found");
     }
 
-    const item: any = sale.items.id(itemId);
+    sale.items.forEach(async (item: any) => {
+      await Product.updateOne(
+        { _id: item.productId },
+        { $inc: { currentStock: item.quantity } },
+      );
+    });
 
-    if (!item) {
-      return { message: "Sale item not found" };
-    }
+    const deletedSale = await Sales.findByIdAndDelete(saleId);
 
-    await Product.updateOne(
-      { _id: item.productId },
-      { $inc: { currentStock: item.quantity } },
-    );
-
-    if (sale.items.length === 1) {
-      await Sales.findByIdAndDelete(sale._id);
-      return { deletedSale: true, saleId: sale._id };
-    }
-
-    await item.deleteOne();
-    sale.totalAmount = Math.max(0, sale.totalAmount - item.subTotal);
-
-    await sale.save();
-
-    return sale;
+    return deletedSale;
   } catch (error) {
     console.error("Error deleting sale:", error);
     return { message: "Failed to delete sale", error: error };
+  }
+};
+
+const voidSale = async (req: any) => {
+  const { saleId } = req.params;
+
+  try {
+    const sale = await Sales.findOne({ _id: saleId });
+    if (!sale) {
+      throw new Error("Sale not found");
+    }
+
+    const voidedSale = await Sales.findByIdAndDelete(saleId);
+    return voidedSale;
+  } catch (error) {
+    console.error("Error voiding sale:", error);
+    return { message: "Failed to void sale", error: error };
   }
 };
 
@@ -264,4 +268,5 @@ export {
   confirmSale,
   unconfirmSale,
   deleteSale,
+  voidSale,
 };

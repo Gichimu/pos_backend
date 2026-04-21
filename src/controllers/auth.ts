@@ -13,7 +13,7 @@ const login = async (req: any) => {
   const { email, password } = req.body;
 
   // find user by email
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email, status: "active" });
   if (!user) {
     return { error: "User not found" };
   }
@@ -95,4 +95,21 @@ const logout = async (req: any) => {
   return { message: "Logout successful" };
 };
 
-export { login, logout, verify, tokenRefresh };
+const confimAccount = async (id: string, password: string) => {
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    // hash the password before saving and set account status to active
+    user.password = await bcrypt.hash(password, 10);
+    user.status = "active";
+    await user.save();
+    return { message: "Account confirmed successfully" };
+  } catch (error) {
+    console.error("Error confirming account:", error);
+    return { message: "Failed to confirm account", error: error };
+  }
+};
+
+export { login, logout, verify, tokenRefresh, confimAccount };
