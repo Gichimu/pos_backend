@@ -24,6 +24,14 @@ const shiftSchema = new mongoose.Schema(
       "m-pesa": { type: Number, default: 0 },
     },
 
+    requisitions: [
+      {
+        productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+        addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        quantity: { type: Number, default: 0 },
+      },
+    ],
+
     closingNotes: { type: String },
 
     // Entered by User during Reconciliation

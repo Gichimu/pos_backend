@@ -123,6 +123,7 @@ const createSale = async (req: any) => {
     newSale.cashierId = req.user.id; // Assuming req.user is set by auth middleware
     try {
       await newSale.save();
+      //print receipt here
     } catch (saveError) {
       const rollbackOps = [...quantityByProduct.entries()].map(
         ([productId, quantity]) => ({

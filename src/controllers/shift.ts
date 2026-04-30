@@ -42,7 +42,7 @@ const openShift = async (req: any) => {
 };
 
 const closeShift = async (req: any) => {
-  const { actualCash, closingNotes } = req.body;
+  const { actualCash, closingNotes, requisitions } = req.body;
   const shiftId = req.params.shiftId;
 
   try {
@@ -74,6 +74,7 @@ const closeShift = async (req: any) => {
 
     shift.endTime = new Date();
     shift.systemSales = totals;
+    shift.requisitions = requisitions || [];
     shift.closingNotes = closingNotes ?? "";
     shift.actualCashCounted = actualCash;
     shift.closedBy = req.body.closedBy ? req.body.closedBy : req.user._id;
