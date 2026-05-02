@@ -1,7 +1,6 @@
 import User from "../models/user.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { sendWelcomeSMS } from "../utils/utils.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -45,9 +44,6 @@ const createUser = async (req: any) => {
     await user.save();
 
     // email the PIN to the cashier if they have a PIN (i.e., if they are a cashier)
-    if (user.pin) {
-      await sendWelcomeSMS(process.env.NUMBER || "", user.firstName, user.pin);
-    }
 
     return user;
   } catch (error: any) {
