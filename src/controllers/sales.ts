@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Sales from "../models/sales.js";
 import Product from "../models/product.js";
 import Shift from "../models/shift.js";
+import { request } from "http";
 
 const getAllSales = async (req: any) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -18,21 +19,35 @@ const getAllSales = async (req: any) => {
     );
   }
 
-  try {
-    const openShifts = await Shift.find({ status: "Open" }).select("_id");
-    if (openShifts.length === 0) {
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-        totalPages: 0,
-      };
+  if (req.query.startDate || req.query.endDate) {
+    filter.createdAt = {};
+    if (req.query.startDate) {
+      filter.createdAt.$gte = new Date(req.query.startDate);
     }
+    if (req.query.endDate) {
+      filter.createdAt.$lte = new Date(req.query.endDate);
+    }
+  }
 
-    const openShiftIds = openShifts.map((s) => s._id);
+  console.log("filtering sales with:", filter);
 
-    filter.shiftId = { $in: openShiftIds };
+  try {
+    if (!req.query.startDate || !req.query.endDate) {
+      const openShifts = await Shift.find({ status: "Open" }).select("_id");
+      if (openShifts.length === 0) {
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        };
+      }
+
+      const openShiftIds = openShifts.map((s) => s._id);
+
+      filter.shiftId = { $in: openShiftIds };
+    }
 
     const [sales, total] = await Promise.all([
       Sales.find(filter)
@@ -42,6 +57,8 @@ const getAllSales = async (req: any) => {
         .populate("cashierId", "username"),
       Sales.countDocuments(filter),
     ]);
+
+    console.log("found sales:", sales);
 
     return {
       data: sales,
