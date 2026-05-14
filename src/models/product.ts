@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+const productType = ["menu", "raw-stock"];
+
 const productSchema = new mongoose.Schema(
   {
     sku: { type: String, unique: true, required: true },
@@ -10,6 +12,7 @@ const productSchema = new mongoose.Schema(
     sellingPrice: { type: Number, required: true },
     currentStock: { type: Number, default: 0 },
     stockReorderLevel: { type: Number, default: 10 },
+    productType: { type: String, enum: productType, required: true },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
