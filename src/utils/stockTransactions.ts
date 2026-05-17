@@ -1,0 +1,105 @@
+import Recipe from "../models/recipe.js";
+import Product from "../models/product.js";
+import mongoose from "mongoose";
+
+export async function processInventoryDeduction(
+  menuItemId: mongoose.Types.ObjectId,
+  quantitySold: number,
+) {
+  const recipe = await Recipe.findOne({ menuItemId });
+
+  if (!recipe) return; // No recipe, no deduction (e.g., for bottled water)
+
+  const updates = recipe.ingredients.map((item) => {
+    return {
+      updateOne: {
+        filter: { _id: item.ingredientId },
+        // Calculate total: (10g per chapati) * 2 chapatis = 20g
+        update: { $inc: { currentStock: -(item.quantity * quantitySold) } },
+      },
+    };
+  });
+
+  // Perform all updates at once for efficiency
+  await Product.bulkWrite(updates);
+}
+
+export async function getMenuWithAvailability() {
+  return await Product.aggregate([
+    // 1. Join with the Recipe
+    {
+      $lookup: {
+        from: "recipes",
+        localField: "_id",
+        foreignField: "menuItemId",
+        as: "recipe",
+      },
+    },
+    { $unwind: { path: "$recipe", preserveNullAndEmptyArrays: true } },
+
+    // 2. Join each ingredient (stored as Products) in the recipe with its current stock
+    {
+      $lookup: {
+        from: "products",
+        localField: "recipe.ingredients.ingredientId",
+        foreignField: "_id",
+        as: "ingredientDetails",
+      },
+    },
+
+    // 3. Calculate "Max Possible" for each ingredient
+    {
+      $addFields: {
+        availabilityPerIngredient: {
+          $map: {
+            input: "$recipe.ingredients",
+            as: "rec",
+            in: {
+              $let: {
+                vars: {
+                  // Find the matching ingredient from the joined details
+                  ing: {
+                    $arrayElemAt: [
+                      {
+                        $filter: {
+                          input: "$ingredientDetails",
+                          as: "i",
+                          cond: { $eq: ["$$i._id", "$$rec.ingredientId"] },
+                        },
+                      },
+                      0,
+                    ],
+                  },
+                },
+                // Calculation: floor(CurrentStock / AmountUsedPerItem)
+                in: {
+                  $floor: {
+                    $divide: ["$$ing.currentStock", "$$rec.quantity"],
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    // 4. Final Availability is the MINIMUM of all ingredient possibilities
+    {
+      $addFields: {
+        unitsAvailable: {
+          $cond: {
+            if: {
+              $gt: [
+                { $size: { $ifNull: ["$availabilityPerIngredient", []] } },
+                0,
+              ],
+            },
+            then: { $min: "$availabilityPerIngredient" },
+            else: 999, // Items without recipes (e.g., bottled water) are always available
+          },
+        },
+      },
+    },
+  ]);
+}

@@ -19,7 +19,23 @@ const addProduct = async (req: any, res: any) => {
     if (productExists) {
       throw new Error("Product with this name already exists");
     }
+    console.log("Adding product:", product);
     const newProduct = new Product(product);
+    if (newProduct?.productType === "raw-stock") {
+      if (newProduct?.subCategory === "chicken") {
+        // update all chicken products to updateProduct.currentStock
+        await Product.updateMany(
+          { subCategory: "chicken", productType: "raw-stock" },
+          { currentStock: newProduct.currentStock },
+        );
+      } else if (newProduct?.subCategory === "beef") {
+        // update all beef products to updateProduct.currentStock
+        await Product.updateMany(
+          { subCategory: "beef", productType: "raw-stock" },
+          { currentStock: newProduct.currentStock },
+        );
+      }
+    }
     newProduct.createdBy = req.user.id;
     await newProduct.save();
     res.status(201).json(newProduct);
@@ -38,6 +54,21 @@ const updateProduct = async (req: any, res: any) => {
     const updatedProduct = await Product.findByIdAndUpdate(id, product, {
       new: true,
     });
+    if (updatedProduct?.productType === "raw-stock") {
+      if (updatedProduct?.subCategory === "chicken") {
+        // update all chicken products to updateProduct.currentStock
+        await Product.updateMany(
+          { subCategory: "chicken", productType: "raw-stock" },
+          { currentStock: updatedProduct.currentStock },
+        );
+      } else if (updatedProduct?.subCategory === "beef") {
+        // update all beef products to updateProduct.currentStock
+        await Product.updateMany(
+          { subCategory: "beef", productType: "raw-stock" },
+          { currentStock: updatedProduct.currentStock },
+        );
+      }
+    }
     res.json(updatedProduct);
   } catch (error: any) {
     console.error("Error updating product:", error);

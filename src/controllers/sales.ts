@@ -3,6 +3,7 @@ import Sales from "../models/sales.js";
 import Product from "../models/product.js";
 import Shift from "../models/shift.js";
 import { request } from "http";
+import { processInventoryDeduction } from "../utils/stockTransactions.js";
 
 const getAllSales = async (req: any) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -57,8 +58,6 @@ const getAllSales = async (req: any) => {
         .populate("cashierId", "username"),
       Sales.countDocuments(filter),
     ]);
-
-    console.log("found sales:", sales);
 
     return {
       data: sales,
@@ -196,6 +195,19 @@ const confirmSale = async (req: any) => {
         runValidators: true,
       },
     );
+
+    // deduct inventory for each item in the sale
+    if (sale) {
+      for (const item of sale.items) {
+        let rez = await processInventoryDeduction(
+          item.productId!,
+          item.quantity,
+        );
+        console.log("Inventory deduction result:", rez);
+      }
+    } else {
+      throw new Error("Sale not found");
+    }
 
     if (!sale) {
       throw new Error("Sale not found");

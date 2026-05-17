@@ -18,6 +18,7 @@ const productSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    unit: { type: String }, // e.g., "kg", "liters", "pieces"
   },
   { timestamps: true },
 );
