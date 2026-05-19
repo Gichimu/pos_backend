@@ -24,8 +24,38 @@ export async function processInventoryDeduction(
   await Product.bulkWrite(updates);
 }
 
-export async function getMenuWithAvailability() {
+export async function adjustMenuItemCurrentStock() {
+  const menuItems = await getMenuWithAvailability(),
+    menuItemMap = new Map(
+      menuItems.map((item: any) => [item._id.toString(), item]),
+    );
+
+  const bulkOps = menuItems.map((item: any) => ({
+    updateOne: {
+      filter: { _id: item._id },
+      update: { currentStock: item.unitsAvailable },
+    },
+  }));
+
+  await Product.bulkWrite(bulkOps);
+}
+
+export async function getMenuWithAvailability(
+  subCategories: string[] = ["chicken", "beef"],
+  excludedProductTypes: string[] = ["raw-stock"],
+) {
+  const match: Record<string, any> = {};
+
+  if (subCategories?.length) {
+    match.subCategory = { $in: subCategories };
+  }
+
+  if (excludedProductTypes?.length) {
+    match.productType = { $nin: excludedProductTypes };
+  }
+
   return await Product.aggregate([
+    { $match: match },
     // 1. Join with the Recipe
     {
       $lookup: {
@@ -35,7 +65,7 @@ export async function getMenuWithAvailability() {
         as: "recipe",
       },
     },
-    { $unwind: { path: "$recipe", preserveNullAndEmptyArrays: true } },
+    { $unwind: { path: "$recipe", preserveNullAndEmptyArrays: false } },
 
     // 2. Join each ingredient (stored as Products) in the recipe with its current stock
     {

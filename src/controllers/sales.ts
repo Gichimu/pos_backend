@@ -3,7 +3,10 @@ import Sales from "../models/sales.js";
 import Product from "../models/product.js";
 import Shift from "../models/shift.js";
 import { request } from "http";
-import { processInventoryDeduction } from "../utils/stockTransactions.js";
+import {
+  adjustMenuItemCurrentStock,
+  processInventoryDeduction,
+} from "../utils/stockTransactions.js";
 
 const getAllSales = async (req: any) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -205,6 +208,7 @@ const confirmSale = async (req: any) => {
         );
         console.log("Inventory deduction result:", rez);
       }
+      await adjustMenuItemCurrentStock(); //adjust beef and chicken items on the menu after deduction
     } else {
       throw new Error("Sale not found");
     }
