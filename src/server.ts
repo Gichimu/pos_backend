@@ -63,6 +63,6 @@ const registerUrls = async () => {
 // Start the server
 app.listen(port, async () => {
   await connectDB();
-  await registerUrls();
+  // await registerUrls();
   console.log(`Server is running on port ${port}`);
 });
