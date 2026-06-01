@@ -21,15 +21,7 @@ import menuRoutes from "./routes/menuRoutes.js";
 dotenv.config();
 const port = process.env.PORT || 3000;
 const app = express();
-// app.use(cors());
-
-app.use(
-  cors({
-    origin: "https://chasespot.biz/", // For production, replace '*' with your actual Angular frontend URL
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
-);
+app.use(cors());
 
 app.use(express.json());
 app.use("/api/users", userRoutes);
