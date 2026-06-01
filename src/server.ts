@@ -38,27 +38,27 @@ app.use(notFound);
 app.use(errorHandler);
 
 // consider moving this to the safConfig file
-const registerUrls = async () => {
-  const { accessToken, error } = await getMpesaToken();
-  if (error) {
-    console.error("Error occurred while fetching access token:", error);
-    return;
-  }
-  const response = await axios.post(
-    // "https://api.safaricom.co.ke/mpesa/c2b/v1/registerurl", // Use sandbox URL for testing
-    "https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl",
-    {
-      ShortCode: process.env.MPESA_TILL_NUMBER,
-      ResponseType: "Completed",
-      ConfirmationURL:
-        "https://your-railway-app.up.railway.app/api/payments/confirmation",
-      ValidationURL:
-        "https://your-railway-app.up.railway.app/api/payments/validation",
-    },
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  );
-  console.log(response.data);
-};
+// const registerUrls = async () => {
+//   const { accessToken, error } = await getMpesaToken();
+//   if (error) {
+//     console.error("Error occurred while fetching access token:", error);
+//     return;
+//   }
+//   const response = await axios.post(
+//     // "https://api.safaricom.co.ke/mpesa/c2b/v1/registerurl", // Use sandbox URL for testing
+//     "https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl",
+//     {
+//       ShortCode: process.env.MPESA_TILL_NUMBER,
+//       ResponseType: "Completed",
+//       ConfirmationURL:
+//         "https://your-railway-app.up.railway.app/api/payments/confirmation",
+//       ValidationURL:
+//         "https://your-railway-app.up.railway.app/api/payments/validation",
+//     },
+//     { headers: { Authorization: `Bearer ${accessToken}` } },
+//   );
+//   console.log(response.data);
+// };
 
 // Start the server
 app.listen(port, async () => {
