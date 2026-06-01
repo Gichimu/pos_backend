@@ -38,6 +38,31 @@ const login = async (req: any) => {
   }
 };
 
+const loginCashier = async (req: any) => {
+  if (!req.body.pin) {
+    return { error: "Required parameters missing" };
+  }
+  const { email, pin } = req.body;
+
+  // find user by pin
+  const user = await User.findOne({ pin, status: "active" });
+  if (!user) {
+    return { error: "User not found" };
+  }
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
+    expiresIn: "15m",
+  });
+  const refreshToken = crypto.randomBytes(40).toString("hex");
+  user.refreshToken = refreshToken;
+  await user.save();
+  return {
+    message: "Login successful",
+    user: user,
+    token: token,
+    refreshToken: refreshToken,
+  };
+};
+
 const tokenRefresh = async (refreshToken: string) => {
   try {
     if (!refreshToken) {
@@ -112,4 +137,4 @@ const confimAccount = async (id: string, password: string) => {
   }
 };
 
-export { login, logout, verify, tokenRefresh, confimAccount };
+export { login, logout, verify, tokenRefresh, confimAccount, loginCashier };

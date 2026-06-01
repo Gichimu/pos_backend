@@ -6,10 +6,20 @@ import {
   login,
   logout,
   tokenRefresh,
+  loginCashier,
 } from "../controllers/auth.js";
 
 router.post("/login", async (req: any, res: any) => {
   let results: any = await login(req);
+  if (results.error) {
+    res.status(400).json({ message: "Failed to login", error: results.error });
+  } else {
+    res.json(results);
+  }
+});
+
+router.post("/cashier-login", async (req: any, res: any) => {
+  let results: any = await loginCashier(req);
   if (results.error) {
     res.status(400).json({ message: "Failed to login", error: results.error });
   } else {
