@@ -28,7 +28,7 @@ router.get("/:id", verify, async (req: any, res: any) => {
 });
 
 router.post("/", verify, async (req: any, res: any) => {
-  let results: any = await createRecipe(req.body);
+  let results: any = await createRecipe(req);
   if (results.error) {
     return res.status(400).json({ error: results.error });
   }
@@ -37,7 +37,7 @@ router.post("/", verify, async (req: any, res: any) => {
 
 router.put("/:id", verify, async (req: any, res: any) => {
   const { id } = req.params;
-  let results: any = await updateRecipe(id, req.body);
+  let results: any = await updateRecipe(id, req);
   if (results.error) {
     return res.status(400).json({ error: results.error });
   }
@@ -46,7 +46,7 @@ router.put("/:id", verify, async (req: any, res: any) => {
 
 router.delete("/:id", verify, async (req: any, res: any) => {
   const { id } = req.params;
-  let results: any = await deleteRecipe(id);
+  let results: any = await deleteRecipe(id, req);
   if (results.error) {
     return res.status(400).json({ error: results.error });
   }

@@ -1,8 +1,23 @@
 import Recipe from "../models/recipe.js";
+import { writeAuditLog } from "../utils/sysTransactions.js";
 
-const createRecipe = async (data: any) => {
+const createRecipe = async (req: any) => {
+  const data = req.body;
+  if (!data) {
+    return { error: "No recipe data provided" };
+  }
   try {
+    data.createdBy = req.user.id;
     const recipe = new Recipe(data);
+    await writeAuditLog({
+      userId: data.createdBy,
+      userRole: "admin", // Assuming only admins can create recipes
+      action: "RECIPE_CREATE",
+      description: `Recipe for ${recipe.menuItemName} added`,
+      collection: "recipes",
+      targetId: recipe._id,
+      newData: recipe,
+    });
     await recipe.save();
     return recipe;
   } catch (error: any) {
@@ -31,24 +46,54 @@ const getRecipe = async (id: string) => {
   }
 };
 
-const updateRecipe = async (id: string, data: any) => {
+const updateRecipe = async (id: string, req: any) => {
+  const data = req.body;
+  if (!data) {
+    return { error: "No recipe data provided" };
+  }
   try {
-    const recipe = await Recipe.findByIdAndUpdate(id, data, { new: true });
+    data.updatedBy = req.user.id;
+    const recipe = await Recipe.findById(id);
     if (!recipe) {
       return { error: "Recipe not found" };
     }
-    return recipe;
+    const updatedRecipe = await Recipe.findByIdAndUpdate(id, data, {
+      new: true,
+    });
+    if (!updatedRecipe) {
+      return { error: "Recipe not found" };
+    }
+    await writeAuditLog({
+      userId: data.updatedBy,
+      userRole: "admin", // Assuming only admins can update recipes
+      action: "RECIPE_UPDATE",
+      description: `Recipe for ${recipe.menuItemName} updated`,
+      collection: "recipes",
+      targetId: recipe._id,
+      oldData: recipe,
+      newData: updatedRecipe,
+    });
+    return updatedRecipe;
   } catch (error: any) {
     return { error: error.message };
   }
 };
 
-const deleteRecipe = async (id: string) => {
+const deleteRecipe = async (id: string, req: any) => {
   try {
     const recipe = await Recipe.findByIdAndDelete(id);
     if (!recipe) {
       return { error: "Recipe not found" };
     }
+    await writeAuditLog({
+      userId: req.user.id,
+      userRole: "admin", // Assuming only admins can delete recipes
+      action: "RECIPE_DELETE",
+      description: `Recipe for ${recipe.menuItemName} deleted`,
+      collection: "recipes",
+      targetId: recipe._id,
+      oldData: recipe,
+    });
     return recipe;
   } catch (error: any) {
     return { error: error.message };

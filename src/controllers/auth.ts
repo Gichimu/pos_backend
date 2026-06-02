@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 import crypto from "crypto";
+import { writeActivityLog } from "../utils/sysTransactions.js";
 
 const login = async (req: any) => {
   if (!req.body || !req.body.email || !req.body.password) {
@@ -28,6 +29,12 @@ const login = async (req: any) => {
     });
     const refreshToken = crypto.randomBytes(40).toString("hex");
     user.refreshToken = refreshToken;
+    await writeActivityLog({
+      userId: user._id.toString(),
+      userRole: user.roles,
+      action: "USER_LOGIN",
+      description: `User ${user.firstName} ${user.lastName} logged in successfully`,
+    });
     await user.save();
     return {
       message: "Login successful",
@@ -54,6 +61,12 @@ const loginCashier = async (req: any) => {
   });
   const refreshToken = crypto.randomBytes(40).toString("hex");
   user.refreshToken = refreshToken;
+  await writeActivityLog({
+    userId: user._id.toString(),
+    userRole: user.roles,
+    action: "CASHIER_LOGIN",
+    description: `Cashier ${user.firstName} ${user.lastName} logged in successfully`,
+  });
   await user.save();
   return {
     message: "Login successful",

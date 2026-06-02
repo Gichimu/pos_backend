@@ -1,4 +1,5 @@
 import Product from "../models/product.js";
+import { writeAuditLog } from "../utils/sysTransactions.js";
 
 const getAllProducts = async (req: any, res: any) => {
   try {
@@ -37,6 +38,14 @@ const addProduct = async (req: any, res: any) => {
       }
     }
     newProduct.createdBy = req.user.id;
+    await writeAuditLog({
+      userId: req.user.id,
+      userRole: req.user.role,
+      action: "PRODUCT_CREATE",
+      description: `Product created: ${newProduct.name}`,
+      collection: "products",
+      targetId: newProduct._id,
+    });
     await newProduct.save();
     res.status(201).json(newProduct);
   } catch (error: any) {
@@ -54,22 +63,37 @@ const updateProduct = async (req: any, res: any) => {
     const updatedProduct = await Product.findByIdAndUpdate(id, product, {
       new: true,
     });
-    if (updatedProduct?.productType === "raw-stock") {
-      if (updatedProduct?.subCategory === "chicken") {
-        // update all chicken products to updateProduct.currentStock
-        await Product.updateMany(
-          { subCategory: "chicken", productType: "raw-stock" },
-          { currentStock: updatedProduct.currentStock },
-        );
-      } else if (updatedProduct?.subCategory === "beef") {
-        // update all beef products to updateProduct.currentStock
-        await Product.updateMany(
-          { subCategory: "beef", productType: "raw-stock" },
-          { currentStock: updatedProduct.currentStock },
-        );
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    } else {
+      const oldProduct = await Product.findById(id);
+      if (updatedProduct?.productType === "raw-stock") {
+        if (updatedProduct?.subCategory === "chicken") {
+          // update all chicken products to updateProduct.currentStock
+          await Product.updateMany(
+            { subCategory: "chicken", productType: "raw-stock" },
+            { currentStock: updatedProduct.currentStock },
+          );
+        } else if (updatedProduct?.subCategory === "beef") {
+          // update all beef products to updateProduct.currentStock
+          await Product.updateMany(
+            { subCategory: "beef", productType: "raw-stock" },
+            { currentStock: updatedProduct.currentStock },
+          );
+        }
       }
+      await writeAuditLog({
+        userId: req.user.id,
+        userRole: req.user.role,
+        action: "PRODUCT_UPDATE",
+        description: `Product updated: ${updatedProduct.name}`,
+        collection: "products",
+        targetId: updatedProduct._id,
+        oldData: oldProduct,
+        newData: updatedProduct,
+      });
+      res.json(updatedProduct);
     }
-    res.json(updatedProduct);
   } catch (error: any) {
     console.error("Error updating product:", error);
     res.status(500).json({ message: "Failed to update product", error: error });
@@ -79,6 +103,19 @@ const updateProduct = async (req: any, res: any) => {
 const deleteProduct = async (req: any, res: any) => {
   try {
     const { id } = req.params;
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    await writeAuditLog({
+      userId: req.user.id,
+      userRole: req.user.role,
+      action: "PRODUCT_DELETE",
+      description: `Product deleted: ${product.name}`,
+      collection: "products",
+      targetId: product._id,
+      oldData: product,
+    });
     await Product.findByIdAndDelete(id);
     res.json({ message: "Product deleted successfully" });
   } catch (error: any) {
