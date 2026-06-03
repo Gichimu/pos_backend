@@ -17,6 +17,7 @@ import { getMpesaToken } from "./utils/safConfig.js";
 import recipe from "./models/recipe.js";
 import recipeRoutes from "./routes/recipeRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
+import logRoutes from "./routes/logRoutes.js";
 
 dotenv.config();
 const port = process.env.PORT || 3000;
@@ -33,6 +34,7 @@ app.use("/api/shifts", shiftRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/recipes", recipeRoutes);
 app.use("/api/menu", menuRoutes);
+app.use("/api/logs", logRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
