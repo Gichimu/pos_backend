@@ -4,7 +4,7 @@ import { writeAuditLog } from "../utils/sysTransactions.js";
 const getCategories = async (req: any, res: any) => {
   // Implementation for fetching categories
   try {
-    let categories = await Category.find();
+    let categories = await Category.find().sort({ name: 1 });
     return categories;
   } catch (error) {
     return { message: "Failed to fetch categories", error };
