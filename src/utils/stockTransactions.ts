@@ -41,7 +41,16 @@ export async function adjustMenuItemCurrentStock() {
 }
 
 export async function getMenuWithAvailability(
-  subCategories: string[] = ["chicken", "beef", "snacks"],
+  subCategories: string[] = [
+    "chicken",
+    "beef",
+    "snacks",
+    "hot",
+    "accompaniments",
+    "meals",
+    "seafood",
+    "matumbo",
+  ],
   excludedProductTypes: string[] = ["raw-stock"],
 ) {
   const match: Record<string, any> = {};

@@ -9,7 +9,7 @@ const getLogs = async (req: any) => {
     } else if (req.query.from || req.query.to) {
       Object.assign(filter, constructDateFilter(req.query.from, req.query.to));
     }
-    const logs = await SystemLog.find(filter).sort({ createdAt: -1 });
+    const logs = await SystemLog.find(filter).sort({ timestamp: -1 });
     return { logs };
   } catch (error) {
     return { error };
