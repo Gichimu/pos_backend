@@ -1,4 +1,5 @@
 import Product from "../models/product.js";
+import { adjustMenuItemCurrentStock } from "../utils/stockTransactions.js";
 import { writeAuditLog } from "../utils/sysTransactions.js";
 
 const getAllProducts = async (req: any, res: any) => {
@@ -67,21 +68,22 @@ const updateProduct = async (req: any, res: any) => {
       return res.status(404).json({ message: "Product not found" });
     } else {
       const oldProduct = await Product.findById(id);
-      if (updatedProduct?.productType === "raw-stock") {
-        if (updatedProduct?.subCategory === "chicken") {
-          // update all chicken products to updateProduct.currentStock
-          await Product.updateMany(
-            { subCategory: "chicken", productType: "raw-stock" },
-            { currentStock: updatedProduct.currentStock },
-          );
-        } else if (updatedProduct?.subCategory === "beef") {
-          // update all beef products to updateProduct.currentStock
-          await Product.updateMany(
-            { subCategory: "beef", productType: "raw-stock" },
-            { currentStock: updatedProduct.currentStock },
-          );
-        }
-      }
+      // if (updatedProduct?.productType === "raw-stock") {
+      //   if (updatedProduct?.subCategory === "chicken") {
+      //     // update all chicken products to updateProduct.currentStock
+      //     await Product.updateMany(
+      //       { subCategory: "chicken", productType: "raw-stock" },
+      //       { currentStock: updatedProduct.currentStock },
+      //     );
+      //   } else if (updatedProduct?.subCategory === "beef") {
+      //     // update all beef products to updateProduct.currentStock
+      //     await Product.updateMany(
+      //       { subCategory: "beef", productType: "raw-stock" },
+      //       { currentStock: updatedProduct.currentStock },
+      //     );
+      //   }
+      // }
+      await adjustMenuItemCurrentStock(); // ensure menu item stocks are updated after product update
       await writeAuditLog({
         userId: req.user.id,
         userRole: req.user.role,

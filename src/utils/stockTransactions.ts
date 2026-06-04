@@ -25,19 +25,19 @@ export async function processInventoryDeduction(
 }
 
 export async function adjustMenuItemCurrentStock() {
-  const menuItems = await getMenuWithAvailability(),
-    menuItemMap = new Map(
-      menuItems.map((item: any) => [item._id.toString(), item]),
-    );
+  const menuItems = await getMenuWithAvailability();
 
-  const bulkOps = menuItems.map((item: any) => ({
+  if (!menuItems || menuItems.length === 0) return;
+
+  const bulkOps = menuItems.map((item) => ({
     updateOne: {
       filter: { _id: item._id },
-      update: { currentStock: item.unitsAvailable },
+      // Use $set explicitly to prevent accidentally overriding other object keys
+      update: { $set: { currentStock: item.unitsAvailable } },
     },
   }));
 
-  await Product.bulkWrite(bulkOps);
+  await Product.bulkWrite(bulkOps, { ordered: false });
 }
 
 export async function getMenuWithAvailability(
