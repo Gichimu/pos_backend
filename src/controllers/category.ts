@@ -21,7 +21,6 @@ const addCategory = async (req: any, res: any) => {
     category.createdBy = req.user.id;
     await writeAuditLog({
       userId: req.user.id,
-      userRole: req.user.role,
       action: "CATEGORY_CREATE",
       description: `Category added: ${category.name}`,
       collection: "categories",
@@ -59,7 +58,6 @@ const updateCategory = async (req: any, res: any) => {
     }
     await writeAuditLog({
       userId: req.user.id,
-      userRole: req.user.role,
       action: "CATEGORY_UPDATE",
       description: `Category updated: ${category.name}`,
       collection: "categories",
@@ -85,7 +83,6 @@ const deleteCategory = async (req: any, res: any) => {
     }
     await writeAuditLog({
       userId: req.user.id,
-      userRole: req.user.role,
       action: "CATEGORY_DELETE",
       description: `Category deleted: ${category.name}`,
       collection: "categories",

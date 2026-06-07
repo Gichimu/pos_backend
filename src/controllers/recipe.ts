@@ -11,7 +11,6 @@ const createRecipe = async (req: any) => {
     const recipe = new Recipe(data);
     await writeAuditLog({
       userId: data.createdBy,
-      userRole: "admin", // Assuming only admins can create recipes
       action: "RECIPE_CREATE",
       description: `Recipe for ${recipe.menuItemName} added`,
       collection: "recipes",
@@ -65,7 +64,6 @@ const updateRecipe = async (id: string, req: any) => {
     }
     await writeAuditLog({
       userId: data.updatedBy,
-      userRole: "admin", // Assuming only admins can update recipes
       action: "RECIPE_UPDATE",
       description: `Recipe for ${recipe.menuItemName} updated`,
       collection: "recipes",
@@ -87,7 +85,6 @@ const deleteRecipe = async (id: string, req: any) => {
     }
     await writeAuditLog({
       userId: req.user.id,
-      userRole: "admin", // Assuming only admins can delete recipes
       action: "RECIPE_DELETE",
       description: `Recipe for ${recipe.menuItemName} deleted`,
       collection: "recipes",
