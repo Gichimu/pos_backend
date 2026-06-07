@@ -76,7 +76,7 @@ const getAllSales = async (req: any) => {
   }
 };
 
-const createSale = async (req: any) => {
+const createSale = async (req: any, res: any) => {
   if (
     !req.body ||
     !Array.isArray(req.body.items) ||
@@ -84,6 +84,27 @@ const createSale = async (req: any) => {
   ) {
     return { message: "Required parameters are missing" };
   }
+
+  // idempotency block: check if a sale with the same unique client-generated ID already exists
+  const genericTimeWindow = new Date(Date.now() - 10000); // Last 10 seconds
+
+  const potentialDuplicate = await Sales.findOne({
+    cashierId: req.body.cashierId,
+    totalAmount: req.body.totalAmount,
+    createdAt: { $gte: genericTimeWindow },
+  });
+
+  if (potentialDuplicate) {
+    console.warn("⚠️ Prevented a duplicate checkout loop storm!");
+    // Return a 409 Conflict response with a clear message for the client to understand what happened
+    return res.status(409).json({
+      success: false,
+      error:
+        "Duplicate transaction detected. Please refresh your sales dashboard.",
+    });
+  }
+
+  // End of idempotency block
 
   const quantityByProduct = new Map<string, number>();
   for (const item of req.body.items) {
@@ -177,11 +198,20 @@ const getSaleById = async (id: string) => {
 
 const confirmSale = async (req: any) => {
   const { saleId } = req.params;
-  const { paymentMethod, splitAmounts } = req.body;
+  const { paymentMethod, mpesaAmount, cashAmount } = req.body;
 
   if (!paymentMethod) {
     return { message: "paymentMethod is required" };
   }
+
+  console.log(
+    "Confirming sale with payment method:",
+    paymentMethod,
+    "and mpesa amount:",
+    mpesaAmount,
+    "and cash amount:",
+    cashAmount,
+  );
 
   try {
     const sale = await Sales.findOneAndUpdate(
@@ -191,7 +221,10 @@ const confirmSale = async (req: any) => {
           confirmed: true,
           paymentMethod,
           confirmedBy: req.user.id, // Assuming req.user is set by auth middleware
-          splitAmounts,
+          splitAmounts: {
+            mpesaAmount: paymentMethod === "Split" ? mpesaAmount : undefined,
+            cashAmount: paymentMethod === "Split" ? cashAmount : undefined,
+          },
         },
       },
       {
@@ -201,18 +234,14 @@ const confirmSale = async (req: any) => {
     );
 
     // deduct inventory for each item in the sale
-    if (sale) {
-      for (const item of sale.items) {
-        let rez = await processInventoryDeduction(
-          item.productId!,
-          item.quantity,
-        );
-        console.log("Inventory deduction result:", rez);
-      }
-      await adjustMenuItemCurrentStock(); //adjust beef and chicken items on the menu after deduction
-    } else {
-      throw new Error("Sale not found");
-    }
+    // if (sale) {
+    // for (const item of sale.items) {
+    //   await processInventoryDeduction(item.productId!, item.quantity);
+    // }
+    // await adjustMenuItemCurrentStock(); //adjust beef and chicken items on the menu after deduction
+    // } else {
+    //   throw new Error("Sale not found");
+    // }
 
     if (!sale) {
       throw new Error("Sale not found");

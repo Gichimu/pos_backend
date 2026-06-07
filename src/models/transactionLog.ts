@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 const SystemLogSchema = new mongoose.Schema({
   logType: { type: String, enum: ["activity", "mutation"], required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  userRole: { type: mongoose.Schema.Types.Mixed, required: true },
   action: { type: String, required: true },
   description: { type: String, required: true },
   ipAddress: { type: String },

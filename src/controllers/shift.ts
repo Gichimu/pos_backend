@@ -4,7 +4,8 @@ import mongoose from "mongoose";
 
 type salesSummary = {
   _id: string; // 'Cash' or 'M-Pesa'
-  total: number;
+  cash: number;
+  mpesa: number;
 }[];
 
 const getShifts = async (req: any) => {
@@ -48,22 +49,70 @@ const closeShift = async (req: any) => {
   try {
     // 1. Sum up all sales for this shift
     const salesSummary: salesSummary = await Sale.aggregate([
-      { $match: { shiftId: new mongoose.Types.ObjectId(shiftId) } },
       {
-        $unwind: "$items",
+        $match: {
+          shiftId: new mongoose.Types.ObjectId(shiftId),
+          confirmed: true,
+        },
       },
+
+      // 2. Project data into standardized, predictable cash/mpesa fields per document
+      {
+        $project: {
+          mpesaContribution: {
+            $cond: {
+              if: { $eq: ["$paymentMethod", "M-Pesa"] },
+              then: "$totalAmount",
+              else: {
+                $cond: {
+                  if: { $eq: ["$paymentMethod", "Split"] },
+                  then: { $ifNull: ["$splitAmounts.mpesaAmount", 0] },
+                  else: 0,
+                },
+              },
+            },
+          },
+          cashContribution: {
+            $cond: {
+              if: { $eq: ["$paymentMethod", "Cash"] },
+              then: "$totalAmount",
+              else: {
+                $cond: {
+                  if: { $eq: ["$paymentMethod", "Split"] },
+                  then: { $ifNull: ["$splitAmounts.cashAmount", 0] },
+                  else: 0,
+                },
+              },
+            },
+          },
+        },
+      },
+
+      // 3. Accumulate everything together into a single summary document
       {
         $group: {
-          _id: "$items.paymentMethod", // 'Cash' or 'M-Pesa'
-          total: { $sum: "$items.subTotal" },
+          _id: null, // Combine all matching records together
+          mpesa: { $sum: "$mpesaContribution" },
+          cash: { $sum: "$cashContribution" },
+        },
+      },
+
+      // 4. Optional: Clean up the output formatting
+      {
+        $project: {
+          _id: 0,
+          mpesa: 1,
+          cash: 1,
         },
       },
     ]);
 
     // 2. Format the summary
-    const totals: any = { cash: 0, "m-pesa": 0 };
-    salesSummary.forEach((s) => (totals[s._id?.toLowerCase()] = s.total));
-
+    const totals: any = { cash: 0, mpesa: 0 };
+    if (salesSummary.length > 0) {
+      totals.cash = salesSummary[0]?.cash || 0;
+      totals.mpesa = salesSummary[0]?.mpesa || 0;
+    }
     // 3. Update the Shift record
     const shift = await Shift.findById(shiftId);
     if (!shift) {
@@ -73,17 +122,18 @@ const closeShift = async (req: any) => {
     console.log("found sales totals", totals);
 
     shift.endTime = new Date();
-    shift.systemSales = totals;
+    shift.systemSales = salesSummary[0] || { cash: 0, mpesa: 0 };
     shift.requisitions = requisitions || [];
     shift.closingNotes = closingNotes ?? "";
     shift.actualCashCounted = actualCash;
     shift.closedBy = req.body.closedBy ? req.body.closedBy : req.user._id;
-    shift.variance = actualCash ? actualCash - expectedCash : expectedCash;
+    // shift.variance = actualCash ? actualCash - expectedCash : expectedCash;
     shift.status = "Closed";
 
     await shift.save();
     return shift;
   } catch (error: any) {
+    console.error("Error closing shift:", error);
     return { message: "Failed to close shift", error: error.message };
   }
 };

@@ -41,11 +41,11 @@ const addProduct = async (req: any, res: any) => {
     newProduct.createdBy = req.user.id;
     await writeAuditLog({
       userId: req.user.id,
-      userRole: req.user.role,
       action: "PRODUCT_CREATE",
       description: `Product created: ${newProduct.name}`,
       collection: "products",
       targetId: newProduct._id,
+      newData: newProduct,
     });
     await newProduct.save();
     res.status(201).json(newProduct);
@@ -83,10 +83,9 @@ const updateProduct = async (req: any, res: any) => {
       //     );
       //   }
       // }
-      await adjustMenuItemCurrentStock(); // ensure menu item stocks are updated after product update
+      // await adjustMenuItemCurrentStock(); // ensure menu item stocks are updated after product update
       await writeAuditLog({
         userId: req.user.id,
-        userRole: req.user.role,
         action: "PRODUCT_UPDATE",
         description: `Product updated: ${updatedProduct.name}`,
         collection: "products",
@@ -111,7 +110,6 @@ const deleteProduct = async (req: any, res: any) => {
     }
     await writeAuditLog({
       userId: req.user.id,
-      userRole: req.user.role,
       action: "PRODUCT_DELETE",
       description: `Product deleted: ${product.name}`,
       collection: "products",

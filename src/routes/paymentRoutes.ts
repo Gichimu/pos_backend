@@ -48,12 +48,13 @@ router.get("/shift-payments", async (req, res) => {
 
 router.post("/ncba-webhook", async (req, res) => {
   try {
-    const payload = req.body;
+    const payload: any = {}; // NCBA sends the payload as a string in Body
+    // console.log("Received NCBA Webhook:", payload);
 
     // 1. Authenticate that the incoming request is actually from NCBA
     if (
-      payload.Username !== process.env.NCBA_WEBHOOK_USER ||
-      payload.Password !== process.env.NCBA_WEBHOOK_PASS
+      req.body.Username !== process.env.NCBA_WEBHOOK_USER ||
+      req.body.Password !== process.env.NCBA_WEBHOOK_PASS
     ) {
       console.warn("⚠️ Unauthorized webhook access attempt");
       return res
@@ -62,7 +63,7 @@ router.post("/ncba-webhook", async (req, res) => {
     }
 
     // 2. Validate hash integrity to safeguard against fraud/spoofing
-    const isHashValid = verifyNCBAHash(payload);
+    const isHashValid = verifyNCBAHash(req);
     if (!isHashValid) {
       console.error(
         "❌ NCBA Webhook signature validation failed (Invalid Hash)",

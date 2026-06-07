@@ -20,7 +20,7 @@ router.get("/", verify, async (req: any, res: any) => {
 });
 
 router.post("/", verify, async (req: any, res: any) => {
-  let results: any = await createSale(req);
+  let results: any = await createSale(req, res);
   if (results.error) {
     res
       .status(400)

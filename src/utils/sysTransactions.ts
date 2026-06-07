@@ -3,7 +3,6 @@ import SystemLog from "../models/transactionLog.js";
 
 type LogPayload = {
   userId: string;
-  userRole: string;
   action: string;
   description: string;
   req?: any; // Optional Express request object for capturing IP address
@@ -16,7 +15,6 @@ type LogPayload = {
 
 export async function writeActivityLog({
   userId,
-  userRole,
   action,
   description,
   req = null,
@@ -32,7 +30,6 @@ export async function writeActivityLog({
     const log = await SystemLog.create({
       logType: "activity",
       userId,
-      userRole,
       action, // e.g., 'USER_LOGIN', 'SHIFT_START', 'SHIFT_CLOSE'
       description, // e.g., 'Cashier Jane opened the morning shift'
       ipAddress,
@@ -47,7 +44,6 @@ export async function writeActivityLog({
 
 export async function writeAuditLog({
   userId,
-  userRole,
   action,
   description,
   collection = null,
@@ -57,16 +53,16 @@ export async function writeAuditLog({
   newData,
 }: LogPayload) {
   try {
-    await SystemLog.create({
+    const createdLog = await SystemLog.create({
       logType: "mutation",
       userId,
-      userRole,
       action,
       description,
       targetCollection: collection ?? targetCollection,
       targetId: targetId ?? null,
       changes: getObjectChanges(oldData, newData),
     });
+    console.log("✅ Audit log written:", createdLog);
   } catch (err: any) {
     console.error("❌ Audit Log Error:", err.message);
   }

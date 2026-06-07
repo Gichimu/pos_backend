@@ -21,7 +21,7 @@ const shiftSchema = new mongoose.Schema(
     // Reported by System
     systemSales: {
       cash: { type: Number, default: 0 },
-      "m-pesa": { type: Number, default: 0 },
+      mpesa: { type: Number, default: 0 },
     },
 
     requisitions: [
