@@ -31,7 +31,6 @@ const login = async (req: any) => {
     user.refreshToken = refreshToken;
     await writeActivityLog({
       userId: user._id.toString(),
-      userRole: user.roles,
       action: "USER_LOGIN",
       description: `User ${user.firstName} ${user.lastName} logged in successfully`,
     });
@@ -63,7 +62,6 @@ const loginCashier = async (req: any) => {
   user.refreshToken = refreshToken;
   await writeActivityLog({
     userId: user._id.toString(),
-    userRole: user.roles,
     action: "CASHIER_LOGIN",
     description: `Cashier ${user.firstName} ${user.lastName} logged in successfully`,
   });
