@@ -53,7 +53,6 @@ router.post("/refresh-token", async (req: any, res: any) => {
 });
 
 router.post("/confirm-account", async (req: any, res: any) => {
-  console.log("Confirm account request body:", req.body); // Debug log
   const { userId, newPassword } = req.body;
   if (!userId || !newPassword) {
     return res.status(400).json({ message: "Required parameters missing!" });

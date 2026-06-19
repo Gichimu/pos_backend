@@ -35,7 +35,6 @@ export async function writeActivityLog({
       ipAddress,
       // timestamp is automatically generated as Date.now by the schema
     });
-    console.log("✅ Activity log written:", log);
   } catch (error: any) {
     // Ensure log failures never interrupt actual user actions
     console.error("❌ Failed to write general activity log:", error.message);
@@ -62,7 +61,6 @@ export async function writeAuditLog({
       targetId: targetId ?? null,
       changes: getObjectChanges(oldData, newData),
     });
-    console.log("✅ Audit log written:", createdLog);
   } catch (err: any) {
     console.error("❌ Audit Log Error:", err.message);
   }

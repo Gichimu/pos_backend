@@ -35,7 +35,7 @@ const shiftSchema = new mongoose.Schema(
     closingNotes: { type: String },
 
     // Entered by User during Reconciliation
-    actualCashCounted: { type: Number, default: 0 },
+    totalSales: { type: Number, default: 0 },
 
     // Results
     variance: { type: Number, default: 0 }, // actual - (systemSales.cash + openingFloat)

@@ -8,6 +8,9 @@ const getLogs = async (req: any) => {
       filter.logType = req.query.type;
     } else if (req.query.from || req.query.to) {
       Object.assign(filter, constructDateFilter(req.query.from, req.query.to));
+    } else if (req.query.targetId) {
+      filter.targetId = req.query.targetId;
+      filter.logType = "mutation";
     }
     const logs = await SystemLog.find(filter).sort({ timestamp: -1 });
     return { logs };

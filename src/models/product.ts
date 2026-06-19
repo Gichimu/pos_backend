@@ -19,6 +19,7 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
     unit: { type: String }, // e.g., "kg", "liters", "pieces"
+    inUse: { type: Boolean, default: true }, // Indicates if the product is active or discontinued
   },
   { timestamps: true },
 );

@@ -59,12 +59,11 @@ app.use(errorHandler);
 //     },
 //     { headers: { Authorization: `Bearer ${accessToken}` } },
 //   );
-//   console.log(response.data);
 // };
 
 // Start the server
 app.listen(port, async () => {
   await connectDB();
   // await registerUrls();
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on successfully`);
 });

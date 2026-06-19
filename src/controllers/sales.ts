@@ -34,8 +34,6 @@ const getAllSales = async (req: any) => {
     }
   }
 
-  console.log("filtering sales with:", filter);
-
   try {
     if (!req.query.startDate || !req.query.endDate) {
       const openShifts = await Shift.find({ status: "Open" }).select("_id");
@@ -203,15 +201,6 @@ const confirmSale = async (req: any) => {
   if (!paymentMethod) {
     return { message: "paymentMethod is required" };
   }
-
-  console.log(
-    "Confirming sale with payment method:",
-    paymentMethod,
-    "and mpesa amount:",
-    mpesaAmount,
-    "and cash amount:",
-    cashAmount,
-  );
 
   try {
     const sale = await Sales.findOneAndUpdate(

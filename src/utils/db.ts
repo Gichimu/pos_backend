@@ -17,10 +17,6 @@ const connectDB = async () => {
       if (error) {
         console.error("⚠️ Mongoose failed to build index on the cloud:", error);
         process.exit(1);
-      } else {
-        console.log(
-          "🚀 All cloud indexes (including Partial TTL) built successfully.",
-        );
       }
     });
     console.log("Connected to MongoDB");

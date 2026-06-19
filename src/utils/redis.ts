@@ -20,7 +20,7 @@ const redisClient = new Redis(redisURL, {
 });
 
 redisClient.on("connect", () =>
-  console.log("✅ Connected to Redis on Railway"),
+  console.log("✅ Connected to Redis server successfully"),
 );
 redisClient.on("error", (err: any) =>
   console.error("❌ Redis Connection Error:", err),

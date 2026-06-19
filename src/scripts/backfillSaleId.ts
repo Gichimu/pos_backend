@@ -40,7 +40,6 @@ dotenv.config();
 //     .select("_id");
 
 //   if (salesWithoutId.length === 0) {
-//     console.log("No sales require backfill");
 //     await mongoose.disconnect();
 //     return;
 //   }
@@ -62,7 +61,6 @@ dotenv.config();
 
 //   await Sale.bulkWrite(updates);
 //   await Counter.findByIdAndUpdate("saleId", { $set: { seq: nextSeq } });
-//   console.log(`Backfilled ${updates.length} sales`);
 
 //   await mongoose.disconnect();
 // };

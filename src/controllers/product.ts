@@ -21,7 +21,6 @@ const addProduct = async (req: any, res: any) => {
     if (productExists) {
       throw new Error("Product with this name already exists");
     }
-    console.log("Adding product:", product);
     const newProduct = new Product(product);
     if (newProduct?.productType === "raw-stock") {
       if (newProduct?.subCategory === "chicken") {
@@ -61,13 +60,16 @@ const updateProduct = async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const product = req.body;
+    const oldProduct = await Product.findById(id);
+    if (!oldProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
     const updatedProduct = await Product.findByIdAndUpdate(id, product, {
       new: true,
     });
     if (!updatedProduct) {
       return res.status(404).json({ message: "Product not found" });
     } else {
-      const oldProduct = await Product.findById(id);
       // if (updatedProduct?.productType === "raw-stock") {
       //   if (updatedProduct?.subCategory === "chicken") {
       //     // update all chicken products to updateProduct.currentStock

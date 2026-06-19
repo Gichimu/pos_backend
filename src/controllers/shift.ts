@@ -119,13 +119,12 @@ const closeShift = async (req: any) => {
       throw new Error("Shift not found");
     }
     const expectedCash = shift.openingFloat + totals.cash;
-    console.log("found sales totals", totals);
 
     shift.endTime = new Date();
     shift.systemSales = salesSummary[0] || { cash: 0, mpesa: 0 };
     shift.requisitions = requisitions || [];
     shift.closingNotes = closingNotes ?? "";
-    shift.actualCashCounted = actualCash;
+    shift.totalSales = totals.cash + totals.mpesa;
     shift.closedBy = req.body.closedBy ? req.body.closedBy : req.user._id;
     // shift.variance = actualCash ? actualCash - expectedCash : expectedCash;
     shift.status = "Closed";

@@ -27,7 +27,6 @@ router.post("/confirmation", async (req, res) => {
 });
 
 router.post("/validation", (req, res) => {
-  console.log("Validating Transaction:", req.body);
   // You can check if an Order ID exists here
   res.status(200).json({
     ResultCode: 0,
@@ -48,13 +47,12 @@ router.get("/shift-payments", async (req, res) => {
 
 router.post("/ncba-webhook", async (req, res) => {
   try {
-    const payload: any = {}; // NCBA sends the payload as a string in Body
-    // console.log("Received NCBA Webhook:", payload);
+    const payload: any = req.body; // NCBA sends the payload as a string in Body
 
     // 1. Authenticate that the incoming request is actually from NCBA
     if (
-      req.body.Username !== process.env.NCBA_WEBHOOK_USER ||
-      req.body.Password !== process.env.NCBA_WEBHOOK_PASS
+      payload.Username !== process.env.NCBA_WEBHOOK_USER ||
+      payload.Password !== process.env.NCBA_WEBHOOK_PASS
     ) {
       console.warn("⚠️ Unauthorized webhook access attempt");
       return res
@@ -63,7 +61,10 @@ router.post("/ncba-webhook", async (req, res) => {
     }
 
     // 2. Validate hash integrity to safeguard against fraud/spoofing
-    const isHashValid = verifyNCBAHash(req);
+    const isHashValid = await verifyNCBAHash(
+      payload,
+      process.env.NCBA_SECRET_KEY || "",
+    );
     if (!isHashValid) {
       console.error(
         "❌ NCBA Webhook signature validation failed (Invalid Hash)",
@@ -79,10 +80,6 @@ router.post("/ncba-webhook", async (req, res) => {
     const phoneNumber = payload.Mobile; // e.g., 254711111111
     const customerName = payload.name; // e.g., JOHN DOE
     const tillOrPaybill = payload.BusinessShortCode; // e.g., 880100
-
-    console.log(
-      `💰 Verified NCBA Payment Received: ${mpesaCode} | KES ${amount} from ${customerName}`,
-    );
 
     // 4. Cache transaction into your 24-hour Redis Shift Buffer for admin reconciliation
     const redisKey = `shift:mpesa:${mpesaCode}`;
@@ -104,7 +101,7 @@ router.post("/ncba-webhook", async (req, res) => {
       ResultDesc: "Notification received and logged successfully",
     });
   } catch (error: any) {
-    console.error("❌ Internal Webhook Error:", error.message);
+    console.error("❌ Internal Webhook Error:", error);
     // Send standard failure back to bank so they re-queue and retry the notification later
     return res.status(500).json({
       ResultCode: "1",

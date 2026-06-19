@@ -36,21 +36,31 @@ function computeAvailability(products: Product[], recipes: Recipe[]) {
   return menuProducts.map((menu) => {
     const recipe = recipes.find((r) => r.menuItemId === menu._id);
 
-    if (!recipe) return { menu: menu.name, unitsAvailable: 999, availabilityPerIngredient: [] };
+    if (!recipe)
+      return {
+        menu: menu.name,
+        unitsAvailable: 999,
+        availabilityPerIngredient: [],
+      };
 
     const availabilityPerIngredient = recipe.ingredients.map((rec) => {
       const ing = products.find((p) => p._id === rec.ingredientId);
-      const avail = ing && typeof ing.currentStock === "number" ? Math.floor(ing.currentStock / rec.quantity) : 0;
+      const avail =
+        ing && typeof ing.currentStock === "number"
+          ? Math.floor(ing.currentStock / rec.quantity)
+          : 0;
       return avail;
     });
 
-    const unitsAvailable = availabilityPerIngredient.length > 0 ? Math.min(...availabilityPerIngredient) : 999;
+    const unitsAvailable =
+      availabilityPerIngredient.length > 0
+        ? Math.min(...availabilityPerIngredient)
+        : 999;
 
     return { menu: menu.name, unitsAvailable, availabilityPerIngredient };
   });
 }
 
 const result = computeAvailability(products, recipes);
-console.log(JSON.stringify(result, null, 2));
 
 // Expected: Flour -> 1000/100 = 10, Water -> 2000/50 = 40, Salt -> 3/1 = 3 => min = 3
