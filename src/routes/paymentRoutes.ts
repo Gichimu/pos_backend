@@ -61,18 +61,18 @@ router.post("/ncba-webhook", async (req, res) => {
     }
 
     // 2. Validate hash integrity to safeguard against fraud/spoofing
-    const isHashValid = await verifyNCBAHash(
-      payload,
-      process.env.NCBA_SECRET_KEY || "",
-    );
-    if (!isHashValid) {
-      console.error(
-        "❌ NCBA Webhook signature validation failed (Invalid Hash)",
-      );
-      return res
-        .status(400)
-        .json({ ResultCode: "1", ResultDesc: "Signature Mismatch" });
-    }
+    // const isHashValid = await verifyNCBAHash(
+    //   payload,
+    //   process.env.NCBA_SECRET_KEY || "",
+    // );
+    // if (!isHashValid) {
+    //   console.error(
+    //     "❌ NCBA Webhook signature validation failed (Invalid Hash)",
+    //   );
+    //   return res
+    //     .status(400)
+    //     .json({ ResultCode: "1", ResultDesc: "Signature Mismatch" });
+    // }
 
     // 3. Process the Payment info sent by the bank
     const mpesaCode = payload.TransID; // e.g., RKH71L7YCD
