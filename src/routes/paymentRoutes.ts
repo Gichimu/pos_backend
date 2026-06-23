@@ -113,8 +113,10 @@ router.post("/ncba-webhook", async (req, res) => {
       JSON.stringify({
         amount,
         phoneNumber,
+        mpesaCode,
         customerName,
         tillOrPaybill,
+        transactionDate,
         timestamp: new Date(),
       }),
     );
