@@ -2,6 +2,7 @@ import express from "express";
 const router = express.Router();
 import redisClient from "../utils/redis.js";
 import { verifyNCBAHash } from "../utils/ncbaConfig.js";
+import moment from "moment";
 
 router.post("/confirmation", async (req, res) => {
   const p = req.body;
@@ -90,7 +91,9 @@ router.post("/ncba-webhook", async (req, res) => {
       phoneNumber,
       customerName,
       tillOrPaybill,
-      transactionDate,
+      moment: moment(transactionDate, "YYYYMMDDHHmmss").format(
+        "DD-MMM-YYYY HH:mm:ss",
+      ),
     });
 
     // 4. Cache transaction into your 24-hour Redis Shift Buffer for admin reconciliation
@@ -116,8 +119,9 @@ router.post("/ncba-webhook", async (req, res) => {
         mpesaCode,
         customerName,
         tillOrPaybill,
-        transactionDate,
-        timestamp: new Date(),
+        Date: moment(transactionDate, "YYYYMMDDHHmmss").format(
+          "DD-MMM-YYYY HH:mm:ss",
+        ),
       }),
     );
 
