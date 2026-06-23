@@ -85,17 +85,6 @@ router.post("/ncba-webhook", async (req, res) => {
     const tillOrPaybill = payload.BusinessShortCode; // e.g., 880100
     const transactionDate = payload.TransTime; // e.g., 20230915123045
 
-    console.log("✅ NCBA Webhook received:", {
-      mpesaCode,
-      amount,
-      phoneNumber,
-      customerName,
-      tillOrPaybill,
-      moment: moment(transactionDate, "YYYYMMDDHHmmss").format(
-        "DD-MMM-YYYY HH:mm:ss",
-      ),
-    });
-
     // 4. Cache transaction into your 24-hour Redis Shift Buffer for admin reconciliation
     // const redisKey = `shift:mpesa:${mpesaCode}`;
     // await redisClient.setex(
