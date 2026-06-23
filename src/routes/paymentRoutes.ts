@@ -37,6 +37,8 @@ router.post("/validation", (req, res) => {
 router.get("/shift-payments", async (req, res) => {
   const allPayments = await redisClient.hgetall("daily_shift");
 
+  console.log("Retrieved payments from Redis:", allPayments);
+
   // Convert Redis object to a sorted array for your Angular table
   const result = Object.values(allPayments)
     .map((p: any) => JSON.parse(p))
@@ -80,6 +82,14 @@ router.post("/ncba-webhook", async (req, res) => {
     const phoneNumber = payload.Mobile; // e.g., 254711111111
     const customerName = payload.name; // e.g., JOHN DOE
     const tillOrPaybill = payload.BusinessShortCode; // e.g., 880100
+
+    console.log("✅ NCBA Webhook received:", {
+      mpesaCode,
+      amount,
+      phoneNumber,
+      customerName,
+      tillOrPaybill,
+    });
 
     // 4. Cache transaction into your 24-hour Redis Shift Buffer for admin reconciliation
     const redisKey = `shift:mpesa:${mpesaCode}`;
