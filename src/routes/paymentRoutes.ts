@@ -82,6 +82,7 @@ router.post("/ncba-webhook", async (req, res) => {
     const phoneNumber = payload.Mobile; // e.g., 254711111111
     const customerName = payload.name; // e.g., JOHN DOE
     const tillOrPaybill = payload.BusinessShortCode; // e.g., 880100
+    const transactionDate = new Date(payload.TransTime); // e.g., 20230915123045
 
     console.log("✅ NCBA Webhook received:", {
       mpesaCode,
@@ -89,6 +90,7 @@ router.post("/ncba-webhook", async (req, res) => {
       phoneNumber,
       customerName,
       tillOrPaybill,
+      transactionDate,
     });
 
     // 4. Cache transaction into your 24-hour Redis Shift Buffer for admin reconciliation
