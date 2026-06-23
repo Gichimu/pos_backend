@@ -82,7 +82,7 @@ router.post("/ncba-webhook", async (req, res) => {
     const phoneNumber = payload.Mobile; // e.g., 254711111111
     const customerName = payload.name; // e.g., JOHN DOE
     const tillOrPaybill = payload.BusinessShortCode; // e.g., 880100
-    const transactionDate = new Date(payload.TransTime); // e.g., 20230915123045
+    const transactionDate = payload.TransTime; // e.g., 20230915123045
 
     console.log("✅ NCBA Webhook received:", {
       mpesaCode,
