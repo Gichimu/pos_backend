@@ -94,10 +94,22 @@ router.post("/ncba-webhook", async (req, res) => {
     });
 
     // 4. Cache transaction into your 24-hour Redis Shift Buffer for admin reconciliation
-    const redisKey = `shift:mpesa:${mpesaCode}`;
-    await redisClient.setex(
-      redisKey,
-      86400,
+    // const redisKey = `shift:mpesa:${mpesaCode}`;
+    // await redisClient.setex(
+    //   redisKey,
+    //   86400,
+    //   JSON.stringify({
+    //     amount,
+    //     phoneNumber,
+    //     customerName,
+    //     tillOrPaybill,
+    //     timestamp: new Date(),
+    //   }),
+    // );
+
+    await redisClient.hset(
+      "daily_shift",
+      mpesaCode,
       JSON.stringify({
         amount,
         phoneNumber,
@@ -106,6 +118,8 @@ router.post("/ncba-webhook", async (req, res) => {
         timestamp: new Date(),
       }),
     );
+
+    await redisClient.expire("daily_shift", 50400);
 
     // 5. Respond with NCBA's mandatory Success signature
     return res.status(200).json({
