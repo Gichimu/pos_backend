@@ -8,6 +8,8 @@ import {
   processInventoryDeduction,
 } from "../utils/stockTransactions.js";
 
+import redisClient from "../utils/redis.js";
+
 const getAllSales = async (req: any) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit =
@@ -196,10 +198,25 @@ const getSaleById = async (id: string) => {
 
 const confirmSale = async (req: any) => {
   const { saleId } = req.params;
-  const { paymentMethod, mpesaAmount, cashAmount } = req.body;
+  const { paymentMethod, mpesaAmount, cashAmount, mpesaTransactionId } =
+    req.body;
+
+  const mpesaMessage: any = await redisClient.hget(
+    "daily_shift",
+    mpesaTransactionId,
+  );
 
   if (!paymentMethod) {
     return { message: "paymentMethod is required" };
+  }
+
+  if (mpesaMessage) {
+    mpesaMessage.isUsed = true;
+    await redisClient.hset(
+      "daily_shift",
+      mpesaTransactionId,
+      JSON.stringify(mpesaMessage),
+    );
   }
 
   try {
@@ -209,6 +226,7 @@ const confirmSale = async (req: any) => {
         $set: {
           confirmed: true,
           paymentMethod,
+          mpesaTransactionId,
           confirmedBy: req.user.id, // Assuming req.user is set by auth middleware
           splitAmounts: {
             mpesaAmount: paymentMethod === "Split" ? mpesaAmount : undefined,

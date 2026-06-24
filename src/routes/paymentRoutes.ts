@@ -111,6 +111,7 @@ router.post("/ncba-webhook", async (req, res) => {
         Date: moment(transactionDate, "YYYYMMDDHHmmss").format(
           "DD-MMM-YYYY HH:mm:ss",
         ),
+        isUsed: false,
       }),
     );
 
