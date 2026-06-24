@@ -201,7 +201,7 @@ const confirmSale = async (req: any) => {
   const { paymentMethod, mpesaAmount, cashAmount, mpesaTransactionId } =
     req.body;
 
-  const mpesaMessage: any = await redisClient.hget(
+  const mpesaMessage = await redisClient.hget(
     "daily_shift",
     mpesaTransactionId,
   );
@@ -211,11 +211,12 @@ const confirmSale = async (req: any) => {
   }
 
   if (mpesaMessage) {
-    mpesaMessage.isUsed = true;
+    const parsedMessage = JSON.parse(mpesaMessage);
+    parsedMessage.isUsed = true;
     await redisClient.hset(
       "daily_shift",
       mpesaTransactionId,
-      JSON.stringify(mpesaMessage),
+      JSON.stringify(parsedMessage),
     );
   }
 
