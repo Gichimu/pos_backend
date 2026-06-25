@@ -222,7 +222,7 @@ const confirmSale = async (req: any) => {
 
   try {
     const sale = await Sales.findOneAndUpdate(
-      { _id: saleId },
+      { _id: saleId, confirmed: false },
       {
         $set: {
           confirmed: true,
