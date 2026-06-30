@@ -37,7 +37,7 @@ const saleSchema = new mongoose.Schema(
       cashAmount: { type: Number },
       mpesaAmount: { type: Number },
     },
-    mpesaTransactionId: { type: String },
+    mpesaTransactionId: { type: mongoose.Schema.Types.Mixed },
     confirmedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

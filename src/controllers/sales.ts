@@ -198,26 +198,47 @@ const getSaleById = async (id: string) => {
 
 const confirmSale = async (req: any) => {
   const { saleId } = req.params;
-  const { paymentMethod, mpesaAmount, cashAmount, mpesaTransactionId } =
+  const { paymentMethod, mpesaAmount, cashAmount, mpesaTransactions } =
     req.body;
-
-  const mpesaMessage = await redisClient.hget(
-    "daily_shift",
-    mpesaTransactionId,
-  );
 
   if (!paymentMethod) {
     return { message: "paymentMethod is required" };
   }
 
-  if (mpesaMessage) {
-    const parsedMessage = JSON.parse(mpesaMessage);
-    parsedMessage.isUsed = true;
-    await redisClient.hset(
-      "daily_shift",
-      mpesaTransactionId,
-      JSON.stringify(parsedMessage),
-    );
+  // const mpesaMessage = await redisClient.hget("daily_shift", mpesaTransactions);
+
+  // if (mpesaMessage) {
+  //   const parsedMessage = JSON.parse(mpesaMessage);
+  //   parsedMessage.isUsed = true;
+  //   await redisClient.hset(
+  //     "daily_shift",
+  //     mpesaTransactions,
+  //     JSON.stringify(parsedMessage),
+  //   );
+  // }
+
+  for (const mpesaCode of mpesaTransactions) {
+    // 1. Fetch the transaction from the "daily_shift" hash
+    const mpesaMessage = await redisClient.hget("daily_shift", mpesaCode);
+
+    if (mpesaMessage) {
+      // 2. Parse the stringified JSON payload
+      const parsedMessage = JSON.parse(mpesaMessage);
+
+      // 3. Update the boolean usage flag
+      parsedMessage.isUsed = true;
+
+      // 4. Save the updated object back to Redis under its respective code field
+      await redisClient.hset(
+        "daily_shift",
+        mpesaCode,
+        JSON.stringify(parsedMessage),
+      );
+
+      console.log(`✅ Transaction ${mpesaCode} successfully marked as used.`);
+    } else {
+      console.warn(`⚠️ Transaction code ${mpesaCode} was not found in Redis.`);
+    }
   }
 
   try {
@@ -227,7 +248,7 @@ const confirmSale = async (req: any) => {
         $set: {
           confirmed: true,
           paymentMethod,
-          mpesaTransactionId,
+          mpesaTransactions,
           confirmedBy: req.user.id, // Assuming req.user is set by auth middleware
           splitAmounts: {
             mpesaAmount: paymentMethod === "Split" ? mpesaAmount : undefined,
