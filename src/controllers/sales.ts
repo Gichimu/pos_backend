@@ -198,28 +198,28 @@ const getSaleById = async (id: string) => {
 
 const confirmSale = async (req: any) => {
   const { saleId } = req.params;
-  const { paymentMethod, mpesaAmount, cashAmount, mpesaTransactions } =
+  const { paymentMethod, mpesaAmount, cashAmount, mpesaTransactionId } =
     req.body;
 
   if (!paymentMethod) {
     return { message: "paymentMethod is required" };
   }
 
-  // const mpesaMessage = await redisClient.hget("daily_shift", mpesaTransactions);
+  // const mpesaMessage = await redisClient.hget("daily_shift", mpesaTransactionId);
 
   // if (mpesaMessage) {
   //   const parsedMessage = JSON.parse(mpesaMessage);
   //   parsedMessage.isUsed = true;
   //   await redisClient.hset(
   //     "daily_shift",
-  //     mpesaTransactions,
+  //     mpesaTransactionId,
   //     JSON.stringify(parsedMessage),
   //   );
   // }
 
-  console.log("checking mpesatransaction", mpesaTransactions);
+  console.log("checking mpesatransaction", mpesaTransactionId);
 
-  for (const mpesaCode of mpesaTransactions) {
+  for (const mpesaCode of mpesaTransactionId) {
     // 1. Fetch the transaction from the "daily_shift" hash
     const mpesaMessage = await redisClient.hget("daily_shift", mpesaCode);
 
@@ -250,7 +250,7 @@ const confirmSale = async (req: any) => {
         $set: {
           confirmed: true,
           paymentMethod,
-          mpesaTransactions,
+          mpesaTransactionId,
           confirmedBy: req.user.id, // Assuming req.user is set by auth middleware
           splitAmounts: {
             mpesaAmount: paymentMethod === "Split" ? mpesaAmount : undefined,
