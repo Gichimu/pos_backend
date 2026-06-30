@@ -217,6 +217,8 @@ const confirmSale = async (req: any) => {
   //   );
   // }
 
+  console.log("checking mpesatransaction", mpesaTransactions);
+
   for (const mpesaCode of mpesaTransactions) {
     // 1. Fetch the transaction from the "daily_shift" hash
     const mpesaMessage = await redisClient.hget("daily_shift", mpesaCode);
