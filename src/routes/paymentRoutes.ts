@@ -46,6 +46,22 @@ router.get("/shift-payments", async (req, res) => {
   res.json(result);
 });
 
+router.post("/shift-payment-change", async (req, res) => {
+  const mpesaCode = req.body.mpesaCode;
+  const payment = await redisClient.hget("daily_shift", mpesaCode);
+  const parsedMessage = JSON.parse(payment!);
+
+  parsedMessage.isUsed = false;
+
+  // 4. Save the updated object back to Redis under its respective code field
+  await redisClient.hset(
+    "daily_shift",
+    mpesaCode,
+    JSON.stringify(parsedMessage),
+  );
+  res.json(parsedMessage);
+});
+
 router.post("/ncba-webhook", async (req, res) => {
   try {
     const payload: any = req.body; // NCBA sends the payload as a string in Body
