@@ -38,8 +38,6 @@ router.post("/validation", (req, res) => {
 router.get("/shift-payments", async (req, res) => {
   const allPayments = await redisClient.hgetall("daily_shift");
 
-  console.log("Retrieved payments from Redis:", allPayments);
-
   // Convert Redis object to a sorted array for your Angular table
   const result = Object.values(allPayments)
     .map((p: any) => JSON.parse(p))
