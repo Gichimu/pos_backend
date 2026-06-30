@@ -217,27 +217,31 @@ const confirmSale = async (req: any) => {
   //   );
   // }
 
-  for (const mpesaCode of mpesaTransactionId) {
-    // 1. Fetch the transaction from the "daily_shift" hash
-    const mpesaMessage = await redisClient.hget("daily_shift", mpesaCode);
+  if (mpesaTransactionId && mpesaTransactionId.length > 0) {
+    for (const mpesaCode of mpesaTransactionId) {
+      // 1. Fetch the transaction from the "daily_shift" hash
+      const mpesaMessage = await redisClient.hget("daily_shift", mpesaCode);
 
-    if (mpesaMessage) {
-      // 2. Parse the stringified JSON payload
-      const parsedMessage = JSON.parse(mpesaMessage);
+      if (mpesaMessage) {
+        // 2. Parse the stringified JSON payload
+        const parsedMessage = JSON.parse(mpesaMessage);
 
-      // 3. Update the boolean usage flag
-      parsedMessage.isUsed = true;
+        // 3. Update the boolean usage flag
+        parsedMessage.isUsed = true;
 
-      // 4. Save the updated object back to Redis under its respective code field
-      await redisClient.hset(
-        "daily_shift",
-        mpesaCode,
-        JSON.stringify(parsedMessage),
-      );
+        // 4. Save the updated object back to Redis under its respective code field
+        await redisClient.hset(
+          "daily_shift",
+          mpesaCode,
+          JSON.stringify(parsedMessage),
+        );
 
-      console.log(`✅ Transaction ${mpesaCode} successfully marked as used.`);
-    } else {
-      console.warn(`⚠️ Transaction code ${mpesaCode} was not found in Redis.`);
+        console.log(`✅ Transaction ${mpesaCode} successfully marked as used.`);
+      } else {
+        console.warn(
+          `⚠️ Transaction code ${mpesaCode} was not found in Redis.`,
+        );
+      }
     }
   }
 
