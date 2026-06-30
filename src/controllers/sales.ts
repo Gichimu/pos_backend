@@ -217,8 +217,6 @@ const confirmSale = async (req: any) => {
   //   );
   // }
 
-  console.log("checking mpesatransaction", mpesaTransactionId);
-
   for (const mpesaCode of mpesaTransactionId) {
     // 1. Fetch the transaction from the "daily_shift" hash
     const mpesaMessage = await redisClient.hget("daily_shift", mpesaCode);
@@ -265,14 +263,14 @@ const confirmSale = async (req: any) => {
     );
 
     // deduct inventory for each item in the sale
-    // if (sale) {
-    // for (const item of sale.items) {
-    //   await processInventoryDeduction(item.productId!, item.quantity);
-    // }
-    // await adjustMenuItemCurrentStock(); //adjust beef and chicken items on the menu after deduction
-    // } else {
-    //   throw new Error("Sale not found");
-    // }
+    if (sale) {
+      for (const item of sale.items) {
+        await processInventoryDeduction(item.productId!, item.quantity);
+      }
+      await adjustMenuItemCurrentStock(); //adjust beef and chicken items on the menu after deduction
+    } else {
+      throw new Error("Sale not found");
+    }
 
     if (!sale) {
       throw new Error("Sale not found");

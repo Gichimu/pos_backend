@@ -85,7 +85,7 @@ const updateProduct = async (req: any, res: any) => {
       //     );
       //   }
       // }
-      // await adjustMenuItemCurrentStock(); // ensure menu item stocks are updated after product update
+      await adjustMenuItemCurrentStock(); // ensure menu item stocks are updated after product update
       await writeAuditLog({
         userId: req.user.id,
         action: "PRODUCT_UPDATE",
