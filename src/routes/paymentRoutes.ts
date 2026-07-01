@@ -41,7 +41,9 @@ router.get("/shift-payments", async (req, res) => {
   // Convert Redis object to a sorted array for your Angular table
   const result = Object.values(allPayments)
     .map((p: any) => JSON.parse(p))
-    .filter((m) => Date.now() < new Date(m.Date).valueOf() + 14 * 60 * 60)
+    .filter(
+      (m) => Date.now() < new Date(m.Date).getTime() + 14 * 60 * 60 * 1000,
+    )
     .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
   res.json(result);
