@@ -9,6 +9,7 @@ import {
 } from "../utils/stockTransactions.js";
 
 import redisClient from "../utils/redis.js";
+import shift from "../models/shift.js";
 
 const getAllSales = async (req: any) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -85,6 +86,11 @@ const createSale = async (req: any, res: any) => {
     return { message: "Required parameters are missing" };
   }
 
+  //check for open shifts
+  const openShift = await shift.findOne({ status: "Open" });
+
+  if (!openShift) return { message: "No open shift" };
+
   // idempotency block: check if a sale with the same unique client-generated ID already exists
   const genericTimeWindow = new Date(Date.now() - 10000); // Last 10 seconds
 
@@ -160,6 +166,7 @@ const createSale = async (req: any, res: any) => {
     await Product.bulkWrite(stockDeductionOps);
 
     const sale = req.body;
+    sale.shiftId = openShift._id; //ensure items are added to the open shift
     const newSale = new Sales(sale);
     newSale.cashierId = req.user.id; // Assuming req.user is set by auth middleware
     try {
