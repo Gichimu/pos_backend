@@ -5,6 +5,7 @@ import Shift from "../models/shift.js";
 import { request } from "http";
 import {
   adjustMenuItemCurrentStock,
+  processInventoryAddition,
   processInventoryDeduction,
 } from "../utils/stockTransactions.js";
 
@@ -166,6 +167,17 @@ const createSale = async (req: any, res: any) => {
     await Product.bulkWrite(stockDeductionOps);
 
     const sale = req.body;
+
+    // ********** stock adjustments ************
+    if (sale && sale.items) {
+      for (const item of sale.items) {
+        await processInventoryDeduction(item.productId!, item.quantity);
+      }
+      await adjustMenuItemCurrentStock(); //adjust beef and chicken items on the menu after deduction
+    } else {
+      throw new Error("Sale not found");
+    }
+
     sale.shiftId = openShift._id; //ensure items are added to the open shift
     const newSale = new Sales(sale);
     newSale.cashierId = req.user.id; // Assuming req.user is set by auth middleware
@@ -274,14 +286,6 @@ const confirmSale = async (req: any) => {
     );
 
     // deduct inventory for each item in the sale
-    if (sale) {
-      for (const item of sale.items) {
-        await processInventoryDeduction(item.productId!, item.quantity);
-      }
-      await adjustMenuItemCurrentStock(); //adjust beef and chicken items on the menu after deduction
-    } else {
-      throw new Error("Sale not found");
-    }
 
     if (!sale) {
       throw new Error("Sale not found");
@@ -340,6 +344,15 @@ const deleteSale = async (req: any) => {
     });
 
     const deletedSale = await Sales.findByIdAndDelete(saleId);
+
+    if (deletedSale && deletedSale.items) {
+      for (const item of deletedSale.items) {
+        await processInventoryAddition(item.productId!, item.quantity);
+      }
+      await adjustMenuItemCurrentStock(); //adjust beef and chicken items on the menu after deduction
+    } else {
+      throw new Error("deletedSale not found");
+    }
 
     return deletedSale;
   } catch (error) {

@@ -24,6 +24,28 @@ export async function processInventoryDeduction(
   await Product.bulkWrite(updates);
 }
 
+export async function processInventoryAddition(
+  menuItemId: mongoose.Types.ObjectId,
+  quantitySold: number,
+) {
+  const recipe = await Recipe.findOne({ menuItemId });
+
+  if (!recipe) return; // No recipe, no deduction (e.g., for bottled water)
+
+  const updates = recipe.ingredients.map((item) => {
+    return {
+      updateOne: {
+        filter: { _id: item.ingredientId },
+        // Calculate total: (10g per chapati) * 2 chapatis = 20g
+        update: { $inc: { currentStock: +(item.quantity * quantitySold) } },
+      },
+    };
+  });
+
+  // Perform all updates at once for efficiency
+  await Product.bulkWrite(updates);
+}
+
 export async function adjustMenuItemCurrentStock() {
   const menuItems = await getMenuWithAvailability();
 
