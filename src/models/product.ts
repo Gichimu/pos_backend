@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const productType = ["menu", "raw-stock"];
+const productType = ["menu", "menu-stock", "raw-stock"];
 
 const productSchema = new mongoose.Schema(
   {
