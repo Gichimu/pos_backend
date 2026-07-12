@@ -3,6 +3,7 @@ import Sales from "../models/sales.js";
 import Product from "../models/product.js";
 import Shift from "../models/shift.js";
 import { request } from "http";
+import Return from "../models/returns.js";
 import {
   adjustMenuItemCurrentStock,
   processInventoryAddition,
@@ -55,6 +56,8 @@ const getAllSales = async (req: any) => {
 
       filter.shiftId = { $in: openShiftIds };
     }
+
+    filter.items = { $exists: true, $not: { $size: 0 } };
 
     const [sales, total] = await Promise.all([
       Sales.find(filter)
@@ -298,6 +301,99 @@ const confirmSale = async (req: any) => {
   }
 };
 
+const returnSaleItem = async (req: any) => {
+  const { saleId, itemId } = req.params;
+  try {
+    const sale = await Sales.findOne({ _id: saleId });
+    if (!sale) {
+      throw new Error("Sale not found");
+    }
+
+    const item = sale.items.id(itemId);
+    if (!item) {
+      throw new Error("Item not found in sale");
+    }
+
+    const returnItem = {
+      saleId: sale._id,
+      itemId: item._id,
+      quantity: item.quantity,
+      productId: item.productId,
+      confirmed: false,
+      createdBy: req.user.id, // Assuming req.user is set by auth middleware
+    };
+
+    const newReturn = new Return(returnItem);
+    await newReturn.save();
+
+    // Remove the item from the sale
+    const updatedSale = await Sales.findByIdAndUpdate(
+      saleId,
+      {
+        $pull: { items: { _id: itemId } },
+      },
+      { new: true },
+    );
+
+    console.log("Sale items after return:", updatedSale);
+
+    // return { updatedSale: sale, returnRecord: newReturn };
+    return updatedSale;
+  } catch (error) {
+    console.error("Error returning sale item:", error);
+    return { message: "Failed to return sale item", error: error };
+  }
+};
+
+const confirmReturn = async (req: any) => {
+  const { returnId } = req.params;
+  if (!returnId) {
+    throw new Error("returnId is required");
+  } else if (!mongoose.Types.ObjectId.isValid(returnId)) {
+    throw new Error("Invalid returnId");
+  }
+  try {
+    const returnRecord = await Return.findById(returnId);
+    if (!returnRecord) {
+      throw new Error("Return record not found");
+    }
+
+    const sale = await Sales.findOne({ _id: returnRecord.saleId });
+    if (!sale) {
+      throw new Error("Sale not found");
+    }
+
+    console.log("Sale items:", sale, "Return itemId:", returnRecord);
+
+    // const item = sale.items.id(returnRecord.itemId);
+    // if (!item) {
+    //   throw new Error("Item not found in sale");
+    // }
+
+    // Update menu item for the returned item
+    await Product.updateOne(
+      { _id: returnRecord.productId },
+      { $inc: { currentStock: returnRecord.quantity } },
+    );
+
+    // Adjust menu item stock after return
+    await processInventoryAddition(
+      returnRecord.productId,
+      returnRecord.quantity,
+    );
+    ``;
+
+    returnRecord.confirmed = true;
+    await returnRecord.save();
+
+    // return { updatedSale: sale, confirmedReturn: returnRecord };
+    return sale;
+  } catch (error: any) {
+    console.error("Error confirming return:", error);
+    return { message: "Failed to confirm return", error: error.message };
+  }
+};
+
 const unconfirmSale = async (req: any) => {
   const { saleId } = req.params;
   try {
@@ -386,4 +482,6 @@ export {
   unconfirmSale,
   deleteSale,
   voidSale,
+  returnSaleItem,
+  confirmReturn,
 };

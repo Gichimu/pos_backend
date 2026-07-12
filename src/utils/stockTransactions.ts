@@ -15,7 +15,13 @@ export async function processInventoryDeduction(
       updateOne: {
         filter: { _id: item.ingredientId },
         // Calculate total: (10g per chapati) * 2 chapatis = 20g
-        update: { $inc: { currentStock: -(item.quantity * quantitySold) } },
+        update: {
+          $inc: {
+            currentStock: -parseFloat(
+              (item.quantity * quantitySold).toFixed(2),
+            ),
+          },
+        },
       },
     };
   });
@@ -37,7 +43,13 @@ export async function processInventoryAddition(
       updateOne: {
         filter: { _id: item.ingredientId },
         // Calculate total: (10g per chapati) * 2 chapatis = 20g
-        update: { $inc: { currentStock: +(item.quantity * quantitySold) } },
+        update: {
+          $inc: {
+            currentStock: +parseFloat(
+              (item.quantity * quantitySold).toFixed(2),
+            ),
+          },
+        },
       },
     };
   });

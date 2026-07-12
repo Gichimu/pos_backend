@@ -65,5 +65,5 @@ app.use(errorHandler);
 app.listen(port, async () => {
   await connectDB();
   // await registerUrls();
-  console.log(`Server is running on successfully`);
+  console.log(`Server is running successfully`);
 });
