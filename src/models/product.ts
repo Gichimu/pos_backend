@@ -20,6 +20,7 @@ const productSchema = new mongoose.Schema(
     },
     unit: { type: String }, // e.g., "kg", "liters", "pieces"
     inUse: { type: Boolean, default: true }, // Indicates if the product is active or discontinued
+    hasRecipe: { type: Boolean, default: false }, // Indicates if the product has a recipe associated with it
   },
   { timestamps: true },
 );

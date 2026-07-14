@@ -1,10 +1,22 @@
 import Recipe from "../models/recipe.js";
+import Product from "../models/product.js";
 import { writeAuditLog } from "../utils/sysTransactions.js";
 
 const createRecipe = async (req: any) => {
   const data = req.body;
   if (!data) {
     return { error: "No recipe data provided" };
+  }
+  const existingRecipe = await Recipe.findOne({ menuItemId: data.menuItemId });
+  if (existingRecipe) {
+    return { error: "Recipe for this menu item already exists" };
+  }
+  const product = await Product.findById(data.menuItemId);
+  if (!product) {
+    return { error: "Menu item not found" };
+  } else {
+    product.hasRecipe = true;
+    await product.save();
   }
   try {
     data.createdBy = req.user.id;
