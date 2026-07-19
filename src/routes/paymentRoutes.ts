@@ -2,6 +2,7 @@ import express from "express";
 const router = express.Router();
 import redisClient from "../utils/redis.js";
 import { verifyNCBAHash } from "../utils/ncbaConfig.js";
+import MpesaMsg from "../models/mpesaMsg.js";
 import moment from "moment";
 
 router.post("/confirmation", async (req, res) => {
@@ -119,6 +120,18 @@ router.post("/ncba-webhook", async (req, res) => {
         isUsed: false,
       }),
     );
+
+    const mpesaMsg = new MpesaMsg({
+      amount,
+      phoneNumber,
+      mpesaCode,
+      customerName,
+      tillOrPaybill,
+      Date: moment(transactionDate, "YYYYMMDDHHmmss").format(
+        "DD-MMM-YYYY HH:mm:ss",
+      ),
+    });
+    await mpesaMsg.save();
 
     await redisClient.expire("daily_shift", 86400);
 
