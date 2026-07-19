@@ -35,18 +35,50 @@ router.post("/validation", (req, res) => {
   });
 });
 
+// router.get("/shift-payments", async (req, res) => {
+//   const allPayments = await redisClient.hgetall("daily_shift");
+
+//   // Convert Redis object to a sorted array for your Angular table
+//   const result = Object.values(allPayments)
+//     .map((p: any) => JSON.parse(p))
+//     .filter(
+//       (m) => Date.now() < new Date(m.Date).getTime() + 14 * 60 * 60 * 1000,
+//     )
+//     .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+//   res.json(result);
+// });
+
 router.get("/shift-payments", async (req, res) => {
-  const allPayments = await redisClient.hgetall("daily_shift");
+  try {
+    const allPayments = await redisClient.hgetall("daily_shift");
 
-  // Convert Redis object to a sorted array for your Angular table
-  const result = Object.values(allPayments)
-    .map((p: any) => JSON.parse(p))
-    .filter(
-      (m) => Date.now() < new Date(m.Date).getTime() + 14 * 60 * 60 * 1000,
-    )
-    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+    if (!allPayments) {
+      return res.json([]);
+    }
 
-  res.json(result);
+    const result = Object.values(allPayments)
+      .map((p) => JSON.parse(p))
+      .filter((m) => {
+        // Strict parsing matching your exact webhook format
+        const messageTime = moment(m.Date, "DD-MMM-YYYY HH:mm:ss");
+
+        if (!messageTime.isValid()) return false; // Guard against corrupt payloads
+
+        // Keep the message if the current time is before the message expiration window
+        return moment().isBefore(messageTime.add(24, "hours"));
+      })
+      .sort((a, b) => {
+        // Fix the property reference mismatch ('Date' instead of 'time')
+        const timeA = moment(a.Date, "DD-MMM-YYYY HH:mm:ss").valueOf();
+        const timeB = moment(b.Date, "DD-MMM-YYYY HH:mm:ss").valueOf();
+        return timeB - timeA; // Descending order (newest first)
+      });
+
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 router.post("/ncba-webhook", async (req, res) => {
@@ -64,20 +96,6 @@ router.post("/ncba-webhook", async (req, res) => {
         .json({ ResultCode: "1", ResultDesc: "Authentication Failed" });
     }
 
-    // 2. Validate hash integrity to safeguard against fraud/spoofing
-    // const isHashValid = await verifyNCBAHash(
-    //   payload,
-    //   process.env.NCBA_SECRET_KEY || "",
-    // );
-    // if (!isHashValid) {
-    //   console.error(
-    //     "❌ NCBA Webhook signature validation failed (Invalid Hash)",
-    //   );
-    //   return res
-    //     .status(400)
-    //     .json({ ResultCode: "1", ResultDesc: "Signature Mismatch" });
-    // }
-
     // 3. Process the Payment info sent by the bank
     const mpesaCode = payload.TransID; // e.g., RKH71L7YCD
     const amount = parseFloat(payload.TransAmount); // e.g., 10.00
@@ -85,20 +103,6 @@ router.post("/ncba-webhook", async (req, res) => {
     const customerName = payload.name; // e.g., JOHN DOE
     const tillOrPaybill = payload.BusinessShortCode; // e.g., 880100
     const transactionDate = payload.TransTime; // e.g., 20230915123045
-
-    // 4. Cache transaction into your 24-hour Redis Shift Buffer for admin reconciliation
-    // const redisKey = `shift:mpesa:${mpesaCode}`;
-    // await redisClient.setex(
-    //   redisKey,
-    //   86400,
-    //   JSON.stringify({
-    //     amount,
-    //     phoneNumber,
-    //     customerName,
-    //     tillOrPaybill,
-    //     timestamp: new Date(),
-    //   }),
-    // );
 
     await redisClient.hset(
       "daily_shift",
@@ -116,7 +120,7 @@ router.post("/ncba-webhook", async (req, res) => {
       }),
     );
 
-    await redisClient.expire("daily_shift", 50400);
+    await redisClient.expire("daily_shift", 86400);
 
     // 5. Respond with NCBA's mandatory Success signature
     return res.status(200).json({

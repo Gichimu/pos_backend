@@ -283,7 +283,8 @@ const confirmSale = async (req: any) => {
         },
       },
       {
-        new: true,
+        // new: true,
+        returnDocument: "after", // Use returnDocument instead of new
         runValidators: true,
       },
     );
@@ -332,7 +333,7 @@ const returnSaleItem = async (req: any) => {
       {
         $pull: { items: { _id: itemId } },
       },
-      { new: true },
+      { returnDocument: "after" },
     );
 
     console.log("Sale items after return:", updatedSale);
@@ -407,7 +408,8 @@ const unconfirmSale = async (req: any) => {
         },
       },
       {
-        new: true,
+        // new: true,
+        returnDocument: "after", // Use returnDocument instead of new
         runValidators: true,
       },
     );
