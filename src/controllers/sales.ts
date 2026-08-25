@@ -90,11 +90,6 @@ const createSale = async (req: any, res: any) => {
     return { message: "Required parameters are missing" };
   }
 
-  //check for open shifts
-  const openShift = await shift.findOne({ status: "Open" });
-
-  if (!openShift) return { message: "No open shift" };
-
   // idempotency block: check if a sale with the same unique client-generated ID already exists
   const genericTimeWindow = new Date(Date.now() - 10000); // Last 10 seconds
 
@@ -133,78 +128,75 @@ const createSale = async (req: any, res: any) => {
     (id) => new mongoose.Types.ObjectId(id),
   );
 
+  const session = await mongoose.startSession();
+
   try {
-    const products = await Product.find({ _id: { $in: productIds } }).select(
-      "_id currentStock",
-    );
-    const productStockMap = new Map(
-      products.map((product: any) => [
-        product._id.toString(),
-        product.currentStock,
-      ]),
-    );
+    let createdSale: any = null;
 
-    for (const [productId, quantity] of quantityByProduct.entries()) {
-      const currentStock = productStockMap.get(productId);
-
-      if (currentStock === undefined) {
-        return { message: `Product not found: ${productId}` };
+    await session.withTransaction(async () => {
+      const openShift = await Shift.findOne({ status: "Open" }).session(session);
+      if (!openShift) {
+        throw new Error("No open shift");
       }
 
-      if (currentStock < quantity) {
-        return {
-          message: `Insufficient stock for product ${productId}. Available: ${currentStock}, requested: ${quantity}`,
-        };
+      const products = await Product.find({ _id: { $in: productIds } })
+        .select("_id currentStock")
+        .session(session);
+
+      const productStockMap = new Map(
+        products.map((product: any) => [
+          product._id.toString(),
+          product.currentStock,
+        ]),
+      );
+
+      for (const [productId, quantity] of quantityByProduct.entries()) {
+        const currentStock = productStockMap.get(productId);
+
+        if (currentStock === undefined) {
+          throw new Error(`Product not found: ${productId}`);
+        }
+
+        if (currentStock < quantity) {
+          throw new Error(
+            `Insufficient stock for product ${productId}. Available: ${currentStock}, requested: ${quantity}`,
+          );
+        }
       }
-    }
 
-    const stockDeductionOps = [...quantityByProduct.entries()].map(
-      ([productId, quantity]) => ({
-        updateOne: {
-          filter: { _id: new mongoose.Types.ObjectId(productId) },
-          update: { $inc: { currentStock: -quantity } },
-        },
-      }),
-    );
-
-    await Product.bulkWrite(stockDeductionOps);
-
-    const sale = req.body;
-
-    // ********** stock adjustments ************
-    if (sale && sale.items) {
-      for (const item of sale.items) {
-        await processInventoryDeduction(item.productId!, item.quantity);
-      }
-      await adjustMenuItemCurrentStock(); //adjust beef and chicken items on the menu after deduction
-    } else {
-      throw new Error("Sale not found");
-    }
-
-    sale.shiftId = openShift._id; //ensure items are added to the open shift
-    const newSale = new Sales(sale);
-    newSale.cashierId = req.user.id; // Assuming req.user is set by auth middleware
-    try {
-      await newSale.save();
-      //print receipt here
-    } catch (saveError) {
-      const rollbackOps = [...quantityByProduct.entries()].map(
+      const stockDeductionOps = [...quantityByProduct.entries()].map(
         ([productId, quantity]) => ({
           updateOne: {
             filter: { _id: new mongoose.Types.ObjectId(productId) },
-            update: { $inc: { currentStock: quantity } },
+            update: { $inc: { currentStock: -quantity } },
           },
         }),
       );
 
-      await Product.bulkWrite(rollbackOps);
-      throw saveError;
-    }
+      await Product.bulkWrite(stockDeductionOps, { session });
 
-    return newSale;
+      const sale = {
+        ...req.body,
+        shiftId: openShift._id,
+        cashierId: req.user.id,
+      };
+
+      // ********** stock adjustments ************
+      for (const item of sale.items) {
+        await processInventoryDeduction(item.productId!, item.quantity, session);
+      }
+      await adjustMenuItemCurrentStock(session);
+
+      const newSale = new Sales(sale);
+      createdSale = await newSale.save({ session });
+    });
+
+    return createdSale;
   } catch (error) {
     console.error("Error creating sale:", error);
     return { message: "Failed to create sale", error: error };
+  } finally {
+    await session.endSession();
   }
 };
 

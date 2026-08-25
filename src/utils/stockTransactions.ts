@@ -5,8 +5,11 @@ import mongoose from "mongoose";
 export async function processInventoryDeduction(
   menuItemId: mongoose.Types.ObjectId,
   quantitySold: number,
+  session?: mongoose.ClientSession,
 ) {
-  const recipe = await Recipe.findOne({ menuItemId });
+  const recipeQuery = Recipe.findOne({ menuItemId });
+  if (session) recipeQuery.session(session);
+  const recipe = await recipeQuery;
 
   if (!recipe) return; // No recipe, no deduction (e.g., for bottled water)
 
@@ -27,14 +30,17 @@ export async function processInventoryDeduction(
   });
 
   // Perform all updates at once for efficiency
-  await Product.bulkWrite(updates);
+  await Product.bulkWrite(updates, session ? { session } : undefined);
 }
 
 export async function processInventoryAddition(
   menuItemId: mongoose.Types.ObjectId,
   quantitySold: number,
+  session?: mongoose.ClientSession,
 ) {
-  const recipe = await Recipe.findOne({ menuItemId });
+  const recipeQuery = Recipe.findOne({ menuItemId });
+  if (session) recipeQuery.session(session);
+  const recipe = await recipeQuery;
 
   if (!recipe) return; // No recipe, no deduction (e.g., for bottled water)
 
@@ -55,11 +61,11 @@ export async function processInventoryAddition(
   });
 
   // Perform all updates at once for efficiency
-  await Product.bulkWrite(updates);
+  await Product.bulkWrite(updates, session ? { session } : undefined);
 }
 
-export async function adjustMenuItemCurrentStock() {
-  const menuItems = await getMenuWithAvailability();
+export async function adjustMenuItemCurrentStock(session?: mongoose.ClientSession) {
+  const menuItems = await getMenuWithAvailability(undefined, undefined, session);
 
   if (!menuItems || menuItems.length === 0) return;
 
@@ -71,7 +77,10 @@ export async function adjustMenuItemCurrentStock() {
     },
   }));
 
-  await Product.bulkWrite(bulkOps, { ordered: false });
+  await Product.bulkWrite(
+    bulkOps,
+    session ? { ordered: false, session } : { ordered: false },
+  );
 }
 
 export async function getMenuWithAvailability(
@@ -86,6 +95,7 @@ export async function getMenuWithAvailability(
     "matumbo",
   ],
   excludedProductTypes: string[] = ["raw-stock"],
+  session?: mongoose.ClientSession,
 ) {
   const match: Record<string, any> = {};
 
@@ -97,7 +107,7 @@ export async function getMenuWithAvailability(
     match.productType = { $nin: excludedProductTypes };
   }
 
-  return await Product.aggregate([
+  const aggregate = Product.aggregate([
     { $match: match },
     // 1. Join with the Recipe
     {
@@ -175,4 +185,10 @@ export async function getMenuWithAvailability(
       },
     },
   ]);
+
+  if (session) {
+    aggregate.session(session);
+  }
+
+  return await aggregate;
 }
