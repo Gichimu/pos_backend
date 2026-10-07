@@ -44,6 +44,31 @@ const login = async (req: any) => {
   }
 };
 
+const reauth = async (req: any) => {
+  if (!req.body || !req.body.email || !req.body.password) {
+    return { error: "Required parameters missing" };
+  }
+  const { email, password } = req.body;
+
+  // find user by email
+  const user = await User.findOne({ email, status: "active" });
+  if (!user) {
+    return { error: "User not found" };
+  }
+  // check password
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return { error: "Invalid credentials" };
+  } else {
+    return {
+      message: "Reauthentication successful",
+      user: user,
+      verified: true,
+      approvalToken: crypto.randomBytes(40).toString("hex"),
+    };
+  }
+};
+
 const loginCashier = async (req: any) => {
   if (!req.body.pin) {
     return { error: "Required parameters missing" };
@@ -148,4 +173,12 @@ const confimAccount = async (id: string, password: string) => {
   }
 };
 
-export { login, logout, verify, tokenRefresh, confimAccount, loginCashier };
+export {
+  login,
+  reauth,
+  logout,
+  verify,
+  tokenRefresh,
+  confimAccount,
+  loginCashier,
+};

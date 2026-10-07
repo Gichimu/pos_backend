@@ -134,7 +134,9 @@ const createSale = async (req: any, res: any) => {
     let createdSale: any = null;
 
     await session.withTransaction(async () => {
-      const openShift = await Shift.findOne({ status: "Open" }).session(session);
+      const openShift = await Shift.findOne({ status: "Open" }).session(
+        session,
+      );
       if (!openShift) {
         throw new Error("No open shift");
       }
@@ -183,7 +185,11 @@ const createSale = async (req: any, res: any) => {
 
       // ********** stock adjustments ************
       for (const item of sale.items) {
-        await processInventoryDeduction(item.productId!, item.quantity, session);
+        await processInventoryDeduction(
+          item.productId!,
+          item.quantity,
+          session,
+        );
       }
       await adjustMenuItemCurrentStock(session);
 

@@ -7,6 +7,7 @@ import {
   logout,
   tokenRefresh,
   loginCashier,
+  reauth,
 } from "../controllers/auth.js";
 
 router.post("/login", async (req: any, res: any) => {
@@ -19,7 +20,7 @@ router.post("/login", async (req: any, res: any) => {
 });
 
 router.post("/reauthenticate", async (req: any, res: any) => {
-  let results: any = await login(req);
+  let results: any = await reauth(req);
   if (results.error) {
     res
       .status(400)
